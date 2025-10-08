@@ -1,6 +1,8 @@
 import { markRawList } from '@common/utils/vueTools'
+import { markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
 import { sortInsert, similar } from '@common/utils/common'
+import { toNewMusicInfo } from '@renderer/utils'
 
 import type { ListInfoItem } from './state'
 import { sources, maxPages, listInfos } from './state'
@@ -84,11 +86,56 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
   return []
 }
 
+const loadDefaultQuranContent = async(sourceId: LX.OnlineSource, page: number): Promise<ListInfoItem[]> => {
+  const listInfo = listInfos[sourceId]!
+  listInfo.noItemLabel = window.i18n.t('list__loading')
+  listInfo.key = `default_${page}__${sourceId}`
+  
+  try {
+    const result = await music[sourceId]?.songList.search('', page, listInfo.limit)
+    
+    if (result?.list?.length) {
+      const transformedList = result.list.map((s: any) => {
+        return markRaw(toNewMusicInfo(s))
+      })
+      listInfo.list = markRawList(transformedList)
+      listInfo.total = result.total
+      listInfo.page = page
+      listInfo.noItemLabel = ''
+      return listInfo.list
+    } else {
+      listInfo.noItemLabel = window.i18n.t('no_item')
+      return []
+    }
+  } catch (error) {
+    console.error('❌ Error loading default Quran content:', error)
+    listInfo.noItemLabel = window.i18n.t('list__load_failed')
+    return []
+  }
+}
+
 export const search = async(text: string, page: number, sourceId: LX.OnlineSource | 'all'): Promise<ListInfoItem[]> => {
   const listInfo = listInfos[sourceId]!
-  if (!text) return resetListInfo(sourceId)
+  if (!text) {
+    // For Quran source, show default reciters when no search text
+    if (sourceId === 'quran') {
+      try {
+        return await loadDefaultQuranContent(sourceId, page)
+      } catch (error) {
+        console.error('❌ Error in loadDefaultQuranContent:', error)
+        throw error
+      }
+    }
+    return resetListInfo(sourceId)
+  }
   const key = `${page}__${sourceId}__${text}`
-  if (listInfo.key == key && listInfo.list.length) return listInfo.list
+  
+  // For Quran source, skip cache to force transformation
+  if (sourceId === 'quran') {
+    // Skip cache for Quran source
+  } else if (listInfo.key == key && listInfo.list.length) {
+    return listInfo.list
+  }
   if (sourceId == 'all') {
     listInfo.noItemLabel = window.i18n.t('list__loading')
     listInfo.key = key
@@ -113,6 +160,8 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     if (listInfo?.key == key && listInfo?.list.length) return listInfo?.list
     listInfo.noItemLabel = window.i18n.t('list__loading')
     listInfo.key = key
+    
+    
     return (music[sourceId]?.songList.search(text, page, listInfo.limit).then((data: SearchResult) => {
       if (key != listInfo.key) return []
       return setList(data, page, text)

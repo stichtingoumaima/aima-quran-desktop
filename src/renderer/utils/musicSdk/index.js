@@ -5,6 +5,7 @@ import wy from './wy/index'
 import mg from './mg/index'
 import bd from './bd/index'
 import xm from './xm'
+import quran from './quran/index'
 import { supportQuality } from './api-source'
 
 
@@ -34,6 +35,10 @@ const sources = {
       name: '虾米音乐',
       id: 'xm',
     },
+    {
+      name: 'Quran.com',
+      id: 'quran',
+    },
     // {
     //   name: '百度音乐',
     //   id: 'bd',
@@ -46,6 +51,7 @@ const sources = {
   mg,
   bd,
   xm,
+  quran,
 }
 export default {
   ...sources,
@@ -165,5 +171,103 @@ export default {
     }
     // console.log(newResult)
     return newResult
+  },
+
+  // Quran-specific search functions
+  async searchQuran({ query, type = 'surah', source: s, limit = 25 }) {
+    const tasks = []
+    for (const source of sources.sources) {
+      if (source.id !== 'quran' || !sources[source.id]) continue
+      if (type === 'reciter') {
+        tasks.push(sources[source.id].reciterSearch.search(query, 1, limit).catch(_ => null))
+      } else {
+        tasks.push(sources[source.id].surahSearch.search(query, 1, limit).catch(_ => null))
+      }
+    }
+    return (await Promise.all(tasks)).filter(s => s)
+  },
+
+  async searchReciters({ query, language, style, region, limit = 25 }) {
+    const quranSource = sources.quran
+    if (!quranSource) return { list: [], total: 0 }
+
+    try {
+      if (language) {
+        return await quranSource.reciterSearch.getByLanguage(language, limit)
+      } else if (style) {
+        return await quranSource.reciterSearch.getByStyle(style, limit)
+      } else {
+        return await quranSource.reciterSearch.search(query, 1, limit)
+      }
+    } catch (error) {
+      console.error('Search reciters error:', error)
+      return { list: [], total: 0 }
+    }
+  },
+
+  async searchSurahs({ query, revelationPlace, minVerses, maxVerses, limit = 25 }) {
+    const quranSource = sources.quran
+    if (!quranSource) return { list: [], total: 0 }
+
+    try {
+      if (revelationPlace) {
+        return await quranSource.surahSearch.getByRevelationPlace(revelationPlace, limit)
+      } else if (minVerses || maxVerses) {
+        return await quranSource.surahSearch.getByVerseCount(minVerses || 1, maxVerses || 286, limit)
+      } else {
+        return await quranSource.surahSearch.search(query, 1, limit)
+      }
+    } catch (error) {
+      console.error('Search surahs error:', error)
+      return { list: [], total: 0 }
+    }
+  },
+
+  async getQuranAudio(surahId, reciterId, quality = '320k') {
+    const quranSource = sources.quran
+    if (!quranSource) throw new Error('Quran source not available')
+
+    try {
+      return await quranSource.getAudioUrl({ id: surahId }, reciterId, quality)
+    } catch (error) {
+      console.error('Get Quran audio error:', error)
+      throw error
+    }
+  },
+
+  async getVerseAudio(surahId, verseId, reciterId, quality = '320k') {
+    const quranSource = sources.quran
+    if (!quranSource) throw new Error('Quran source not available')
+
+    try {
+      return await quranSource.getVerseAudio(surahId, verseId, reciterId, quality)
+    } catch (error) {
+      console.error('Get verse audio error:', error)
+      throw error
+    }
+  },
+
+  async getPopularReciters(limit = 20) {
+    const quranSource = sources.quran
+    if (!quranSource) return { list: [], total: 0 }
+
+    try {
+      return await quranSource.reciterSearch.getPopular(limit)
+    } catch (error) {
+      console.error('Get popular reciters error:', error)
+      return { list: [], total: 0 }
+    }
+  },
+
+  async getAllSurahs() {
+    const quranSource = sources.quran
+    if (!quranSource) return { list: [], total: 0 }
+
+    try {
+      return await quranSource.surahSearch.getAll(114)
+    } catch (error) {
+      console.error('Get all surahs error:', error)
+      return { list: [], total: 0 }
+    }
   },
 }

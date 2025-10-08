@@ -1,5 +1,6 @@
 <template>
   <div :class="$style.container">
+    <!-- Debug: {{ props.listInfo.list.length }} items, noItemLabel: {{ props.listInfo.noItemLabel }} -->
     <div v-show="!props.listInfo.noItemLabel" ref="dom_list_ref" :class="$style.listContent" class="scroll">
       <ul>
         <li v-for="item in props.listInfo.list" :key="item.id" :class="$style.item" @click="toDetail(item)">

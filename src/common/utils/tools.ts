@@ -1,17 +1,22 @@
 // 业务工具方法
 
 export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
+  // Add defensive programming to handle null/undefined values
+  if (!oldMusicInfo) {
+    throw new Error('Invalid music info: null or undefined')
+  }
+
   const meta: Record<string, any> = {
-    songId: oldMusicInfo.songmid, // 歌曲ID，local为文件路径
-    albumName: oldMusicInfo.albumName, // 歌曲专辑名称
-    picUrl: oldMusicInfo.img, // 歌曲图片链接
+    songId: oldMusicInfo.songmid || '', // 歌曲ID，local为文件路径
+    albumName: oldMusicInfo.albumName || '', // 歌曲专辑名称
+    picUrl: oldMusicInfo.img || '', // 歌曲图片链接
   }
   const newInfo = {
-    id: `${oldMusicInfo.source}_${oldMusicInfo.songmid}`,
-    name: oldMusicInfo.name,
-    singer: oldMusicInfo.singer,
-    source: oldMusicInfo.source,
-    interval: oldMusicInfo.interval,
+    id: `${oldMusicInfo.source || 'unknown'}_${oldMusicInfo.songmid || 'unknown'}`,
+    name: oldMusicInfo.name || 'Unknown',
+    singer: oldMusicInfo.singer || 'Unknown',
+    source: oldMusicInfo.source || 'unknown',
+    interval: oldMusicInfo.interval || '00:00',
     meta: meta as LX.Music.MusicInfoOnline['meta'],
   }
 
@@ -47,6 +52,12 @@ export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
         meta.lrcUrl = oldMusicInfo.lrcUrl
         meta.mrcUrl = oldMusicInfo.mrcUrl
         meta.trcUrl = oldMusicInfo.trcUrl
+        break
+      case 'quran':
+        // For Quran, preserve the original meta object to keep surahId and reciterId
+        if (oldMusicInfo.meta) {
+          Object.assign(meta, oldMusicInfo.meta)
+        }
         break
     }
   }
