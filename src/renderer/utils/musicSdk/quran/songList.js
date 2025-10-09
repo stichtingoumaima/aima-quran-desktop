@@ -90,7 +90,7 @@ export default {
       console.log(`🔍 Raw audio data for chapter ${chapter.id}:`, audio)
       const rawDuration = audio?.duration
       console.log(`🔍 Raw duration value: ${rawDuration} (type: ${typeof rawDuration})`)
-      
+
       // Check if duration is in milliseconds (typical for audio APIs)
       let durationInSeconds = rawDuration
       if (rawDuration && rawDuration > 10000) {
@@ -98,7 +98,7 @@ export default {
         durationInSeconds = rawDuration / 1000
         console.log(`🔧 Converting milliseconds to seconds: ${rawDuration}ms → ${durationInSeconds}s`)
       }
-      
+
       const duration = rawDuration ? formatDuration(durationInSeconds) : '0:00:00'
       const fileSize = audio?.file_size ? formatFileSize(audio.file_size) : '0MB'
       const audioUrl = audio?.audio_url || null
