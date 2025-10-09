@@ -1,4 +1,8 @@
 import { httpFetch } from '../../request'
+import { requestMsg } from '../../message'
+import { headers, timeout } from '../options'
+import { dnsLookup } from '../utils'
+import { formatDuration, formatFileSize } from './utils'
 
 export default {
   limit: 30,
@@ -38,16 +42,6 @@ export default {
     })
   },
 
-  // Get audio data for a specific reciter and chapter
-  getChapterAudio(reciterId, chapterId, segments = true) {
-    const requestObj = httpFetch(`https://api.qurancdn.com/api/qdc/audio/reciters/${reciterId}/audio_files?chapter=${chapterId}&segments=${segments}`)
-    return requestObj.promise.then(({ body }) => {
-      if (!body || !body.audioFiles || body.audioFiles.length === 0) {
-        return Promise.reject(new Error('No audio found for this chapter'))
-      }
-      return body.audioFiles[0] // Return the first audio file
-    })
-  },
 
   // Transform reciters to music SDK format (as playlists)
   handleReciterResult(reciters) {
@@ -85,88 +79,81 @@ export default {
   },
 
   // Transform chapters to music SDK format (as songs)
-  handleResult(chapters, reciterInfo = null) {
+  handleResult(chapters, reciterInfo = null, audioData = []) {
     if (!chapters) return []
 
     console.log('📖 Sample chapter data:', chapters[0]) // Debug: see actual chapter structure
+    console.log('🎵 Audio data available:', audioData.length, 'items')
 
-    return chapters.map(chapter => ({
-      name: chapter.translated_name?.name || chapter.name_complex || chapter.name_simple || 'Unknown Chapter',
-      singer: reciterInfo?.name || 'Quran Recitation',
-      source: 'quran',
-      songmid: `chapter_${chapter.id || 'unknown'}_${reciterInfo?.id || 'default'}`,
-      albumId: `chapter_${chapter.id || 'unknown'}`,
-      interval: '0:00', // Will be updated when audio data is fetched
-      albumName: `Surah ${chapter.name_complex || chapter.name_simple || 'Unknown'}`,
-      img: reciterInfo?.profilePicture || '',
-      lrc: null,
-      types: [
-        { type: 'mp3', size: '0MB' },
-      ],
-      _types: {
-        mp3: { size: '0MB' },
-      },
-      typeUrl: {},
-      // Quran-specific data
-      chapterId: chapter.id || 'unknown',
-      chapterName: chapter.name_complex || chapter.name_simple || 'Unknown',
-      chapterNameArabic: chapter.name_arabic || '',
-      versesCount: chapter.verses_count || 0,
-      revelationPlace: chapter.revelation_place || 'Unknown',
-      revelationOrder: chapter.revelation_order || 0,
-      pages: chapter.pages || [],
-      reciterId: reciterInfo?.id,
-      reciterName: reciterInfo?.name,
-      reciterPic: reciterInfo?.profilePicture,
-      isChapter: true, // Flag to identify this as a chapter
-      audioUrl: null, // Will be populated when audio is fetched
-      duration: null,
-      verseTimings: null,
-    }))
+    return chapters.map((chapter, index) => {
+      const audio = audioData[index] || null
+      const duration = audio?.duration ? formatDuration(audio.duration) : '0:00'
+      const fileSize = audio?.file_size ? formatFileSize(audio.file_size) : '0MB'
+      const audioUrl = audio?.audio_url || null
+
+      console.log(`🎵 Chapter ${chapter.id}: duration=${duration}, size=${fileSize}, hasAudio=${!!audioUrl}`)
+
+      return {
+        name: chapter.translated_name?.name || chapter.name_complex || chapter.name_simple || 'Unknown Chapter',
+        singer: reciterInfo?.name || 'Quran Recitation',
+        source: 'quran',
+        songmid: `chapter_${chapter.id || 'unknown'}_${reciterInfo?.id || 'default'}`,
+        albumId: `chapter_${chapter.id || 'unknown'}`,
+        interval: duration,
+        albumName: `Surah ${chapter.name_complex || chapter.name_simple || 'Unknown'}`,
+        img: reciterInfo?.profilePicture || '',
+        lrc: null,
+        types: [
+          { type: 'mp3', size: fileSize },
+        ],
+        _types: {
+          mp3: { size: fileSize },
+        },
+        typeUrl: {},
+        // Quran-specific data
+        chapterId: chapter.id || 'unknown',
+        chapterName: chapter.name_complex || chapter.name_simple || 'Unknown',
+        chapterNameArabic: chapter.name_arabic || '',
+        versesCount: chapter.verses_count || 0,
+        revelationPlace: chapter.revelation_place || 'Unknown',
+        revelationOrder: chapter.revelation_order || 0,
+        pages: chapter.pages || [],
+        reciterId: reciterInfo?.id,
+        reciterName: reciterInfo?.name,
+        reciterPic: reciterInfo?.profilePicture,
+        isChapter: true, // Flag to identify this as a chapter
+        audioUrl,
+        duration: audio?.duration || 0,
+        verseTimings: audio?.verse_timings || null,
+      }
+    })
   },
 
   // Get chapters for a specific reciter (acts as song list)
   async getChaptersForReciter(reciterId, reciterInfo = null, page = 1, limit = 30) {
     try {
       const chapters = await this.getChapters()
-      const list = this.handleResult(chapters, reciterInfo)
 
-      // Apply pagination
+      // Apply pagination to chapters first
       const startIndex = (page - 1) * limit
       const endIndex = startIndex + limit
-      const paginatedList = list.slice(startIndex, endIndex)
+      const paginatedChapters = chapters.slice(startIndex, endIndex)
 
-      // Fetch audio data for each chapter (in parallel, but limit concurrency)
-      const audioPromises = paginatedList.map(async(chapter) => {
-        try {
-          const audioData = await this.getChapterAudio(reciterId, chapter.chapterId)
-          return {
-            ...chapter,
-            audioUrl: audioData.audioUrl,
-            duration: audioData.duration,
-            interval: this.formatDuration(audioData.duration),
-            verseTimings: audioData.verseTimings,
-            types: [
-              { type: 'mp3', size: this.formatFileSize(audioData.fileSize) },
-            ],
-            _types: {
-              mp3: { size: this.formatFileSize(audioData.fileSize) },
-            },
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch audio for chapter ${chapter.chapterId}:`, error)
-          return chapter // Return chapter without audio data
-        }
-      })
+      // Fetch audio data for each chapter
+      const audioPromises = paginatedChapters.map(chapter =>
+        this.getChapterAudio(reciterId, chapter.id),
+      )
+      const audioData = await Promise.all(audioPromises)
 
-      const chaptersWithAudio = await Promise.all(audioPromises)
+      // Transform chapters with audio data
+      const list = this.handleResult(paginatedChapters, reciterInfo, audioData)
 
       this.total = chapters.length
       this.page = page
       this.allPage = Math.ceil(this.total / limit)
 
       return {
-        list: chaptersWithAudio,
+        list,
         allPage: this.allPage,
         limit: this.limit,
         total: this.total,
@@ -247,6 +234,28 @@ export default {
     return this.search('', 1, this.limit)
   },
 
+  // Get audio data for a specific chapter and reciter
+  getChapterAudio(reciterId, chapterId) {
+    const requestObj = httpFetch(`https://api.qurancdn.com/api/qdc/audio/reciters/${reciterId}/audio_files?chapter=${chapterId}&segments=false`, {
+      method: 'get',
+      headers,
+      timeout,
+      lookup: dnsLookup,
+      family: 4,
+    })
+
+    return requestObj.promise.then(({ statusCode, body }) => {
+      if (statusCode === 429) return Promise.reject(new Error(requestMsg.tooManyRequests))
+      if (!body || !body.audio_files || body.audio_files.length === 0) {
+        return null // No audio available for this chapter
+      }
+      return body.audio_files[0]
+    }).catch(error => {
+      console.warn(`⚠️ No audio found for reciter ${reciterId}, chapter ${chapterId}:`, error.message)
+      return null
+    })
+  },
+
   // Get all surahs (chapters) for a specific reciter
   getListDetail(reciterId, page = 1, limit = 30) {
     console.log('📖 Quran getListDetail called:', { reciterId, page, limit })
@@ -268,27 +277,34 @@ export default {
         const endIndex = startIndex + limit
         const paginatedChapters = chapters.slice(startIndex, endIndex)
 
-        // Transform chapters to song format with reciter info
-        const list = this.handleResult(paginatedChapters, reciter)
-        console.log('🎵 Processed chapters list:', list.length)
+        // Fetch audio data for each chapter to get duration
+        const audioPromises = paginatedChapters.map(chapter =>
+          this.getChapterAudio(actualReciterId, chapter.id),
+        )
 
-        const result = {
-          list,
-          allPage: Math.ceil(chapters.length / limit),
-          limit,
-          total: chapters.length,
-          source: 'quran',
-          info: {
-            name: reciter?.translatedName?.name || reciter?.name || 'Unknown Reciter',
-            author: reciter?.name || 'Unknown Reciter',
-            desc: `Complete Quran recitation by ${reciter?.name || 'Unknown Reciter'}`,
-            img: reciter?.profilePicture || reciter?.coverImage || '',
-            play_count: null,
+        return Promise.all(audioPromises).then(audioData => {
+          // Transform chapters to song format with reciter info and audio data
+          const list = this.handleResult(paginatedChapters, reciter, audioData)
+          console.log('🎵 Processed chapters list:', list.length)
+
+          const result = {
+            list,
+            allPage: Math.ceil(chapters.length / limit),
+            limit,
             total: chapters.length,
-          },
-        }
-        console.log('📤 Returning chapters result:', result)
-        return result
+            source: 'quran',
+            info: {
+              name: reciter?.translatedName?.name || reciter?.name || 'Unknown Reciter',
+              author: reciter?.name || 'Unknown Reciter',
+              desc: `Complete Quran recitation by ${reciter?.name || 'Unknown Reciter'}`,
+              img: reciter?.profilePicture || reciter?.coverImage || '',
+              play_count: null,
+              total: chapters.length,
+            },
+          }
+          console.log('📤 Returning chapters result:', result)
+          return result
+        })
       })
     }).catch(error => {
       console.error('❌ Error in getListDetail:', error)
