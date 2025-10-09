@@ -87,11 +87,23 @@ export default {
 
     return chapters.map((chapter, index) => {
       const audio = audioData[index] || null
-      const duration = audio?.duration ? formatDuration(audio.duration) : '0:00'
+      console.log(`🔍 Raw audio data for chapter ${chapter.id}:`, audio)
+      const rawDuration = audio?.duration
+      console.log(`🔍 Raw duration value: ${rawDuration} (type: ${typeof rawDuration})`)
+      
+      // Check if duration is in milliseconds (typical for audio APIs)
+      let durationInSeconds = rawDuration
+      if (rawDuration && rawDuration > 10000) {
+        // If duration is very large, it's likely in milliseconds
+        durationInSeconds = rawDuration / 1000
+        console.log(`🔧 Converting milliseconds to seconds: ${rawDuration}ms → ${durationInSeconds}s`)
+      }
+      
+      const duration = rawDuration ? formatDuration(durationInSeconds) : '0:00:00'
       const fileSize = audio?.file_size ? formatFileSize(audio.file_size) : '0MB'
       const audioUrl = audio?.audio_url || null
 
-      console.log(`🎵 Chapter ${chapter.id}: duration=${duration}, size=${fileSize}, hasAudio=${!!audioUrl}`)
+      console.log(`🎵 Chapter ${chapter.id}: raw=${rawDuration}, converted=${durationInSeconds}s, formatted=${duration}, size=${fileSize}, hasAudio=${!!audioUrl}`)
 
       return {
         name: chapter.translated_name?.name || chapter.name_complex || chapter.name_simple || 'Unknown Chapter',
