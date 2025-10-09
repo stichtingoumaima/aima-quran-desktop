@@ -1,15 +1,15 @@
 // Utility functions for Quran source
 
 /**
- * Format duration from seconds to MM:SS format
+ * Format duration from seconds to HH:MM format
  * @param {number} seconds - Duration in seconds
- * @returns {string} Formatted duration
+ * @returns {string} Formatted duration in hours:minutes
  */
 export const formatDuration = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00'
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return `${hours}:${minutes.toString().padStart(2, '0')}`
 }
 
 /**
