@@ -3,7 +3,7 @@ import songList from './songList'
 import leaderboard from './leaderboard'
 import hotSearch from './hotSearch'
 import comment from './comment'
-import { stream, video_info } from 'play-dl'
+import { stream_from_info, video_info } from 'play-dl'
 import { extractVideoId, getQualityLabel } from './utils'
 
 const youtube = {
@@ -53,10 +53,10 @@ const youtube = {
             return Promise.reject(new Error('Video not found or unavailable'))
           }
 
-          // Try to get the stream with different quality levels
+          // Try to get the stream with different quality levels using stream_from_info
           const tryStream = async(quality) => {
             try {
-              return await stream(`https://www.youtube.com/watch?v=${videoId}`, {
+              return await stream_from_info(info, {
                 quality,
                 type: 'audio',
               })
