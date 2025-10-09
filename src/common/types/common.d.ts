@@ -45,9 +45,9 @@ declare namespace LX {
     [key: string]: boolean | number | string
   }
 
-  type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg'
+  type OnlineSource = 'kw' | 'kg' | 'tx' | 'wy' | 'mg' | 'quran'
   type Source = OnlineSource | 'local'
-  type Quality = '128k' | '320k' | 'flac' | 'flac24bit' | '192k' | 'ape' | 'wav'
+  type Quality = '128k' | '320k' | 'flac' | 'flac24bit' | '192k' | 'ape' | 'wav' | 'mp3'
 
   type QualityList = Partial<Record<LX.Source, LX.Quality[]>>
 

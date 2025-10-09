@@ -86,6 +86,25 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
 
 export const search = async(text: string, page: number, sourceId: LX.OnlineSource | 'all'): Promise<ListInfoItem[]> => {
   const listInfo = listInfos[sourceId]!
+  
+  // Special handling for Quran source - show reciters even without search text
+  if (!text && sourceId === 'quran') {
+    console.log('🕌 Quran songlist search - showing reciters without search text')
+    const key = `${page}__${sourceId}__${text}`
+    if (listInfo.key == key && listInfo.list.length) return listInfo.list
+    listInfo.noItemLabel = window.i18n.t('list__loading')
+    listInfo.key = key
+    return (music[sourceId]?.songList.search(text, page, listInfo.limit).then((data: SearchResult) => {
+      if (key != listInfo.key) return []
+      return setList(data, page, text)
+    }) ?? Promise.reject(new Error('source not found: ' + sourceId))).catch((error: any) => {
+      resetListInfo(sourceId)
+      listInfo.noItemLabel = window.i18n.t('list__load_failed')
+      console.log(error)
+      throw error
+    })
+  }
+  
   if (!text) return resetListInfo(sourceId)
   const key = `${page}__${sourceId}__${text}`
   if (listInfo.key == key && listInfo.list.length) return listInfo.list

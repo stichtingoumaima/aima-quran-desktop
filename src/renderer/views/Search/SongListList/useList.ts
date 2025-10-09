@@ -23,11 +23,11 @@ export default () => {
   })
 
   const search = (text: string, source: SearchSource, page: number) => {
-    // console.log(text, source, page)
+    console.log('📋 SongListList search called:', { text, source, page })
     listInfo.value = listInfos[source] as SearchListInfo
     if (text.length) void addHistoryWord(text)
     void searchSongList(text, page, source).then((list: ListInfoItem[]) => {
-      // console.log(list)
+      console.log('📊 SongListList result received:', list.length, 'items')
       if (listInfo.value.key == window.lx.songListInfo.searchKey && window.lx.songListInfo.searchPosition) {
         void nextTick(() => {
           listRef.value?.scrollTo(window.lx.songListInfo.searchPosition)

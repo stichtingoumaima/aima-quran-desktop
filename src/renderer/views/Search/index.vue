@@ -5,9 +5,9 @@
       <base-tab v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
     </div>
     <div :class="$style.main">
-      <song-list-list v-if="searchType == 'songlist'" v-show="searchText" :page="page" :source-id="source" />
-      <music-list v-else v-show="searchText" :page="page" :source-id="source" />
-      <blank-view :visible="!searchText" :source="source" />
+      <song-list-list v-if="searchType == 'songlist'" v-show="searchText || source === 'quran'" :page="page" :source-id="source" />
+      <music-list v-else v-show="searchText || source === 'quran'" :page="page" :source-id="source" />
+      <blank-view :visible="!searchText && source !== 'quran'" :source="source" />
     </div>
   </div>
 </template>

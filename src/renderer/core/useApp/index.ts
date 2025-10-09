@@ -1,6 +1,6 @@
 import { checkUpdate, getEnvParams, getViewPrevState, sendInited } from '@renderer/utils/ipc'
 
-import { proxy, isFullscreen, themeId } from '@renderer/store'
+import { proxy, isFullscreen, themeId, apiSource } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
 
 import useSync from './useSync'
@@ -18,7 +18,8 @@ import handleListAutoUpdate from './listAutoUpdate'
 
 
 export default () => {
-  // apiSource.value = appSetting['common.apiSource']
+  apiSource.value = appSetting['common.apiSource']
+  console.log('🚀 App initialized with apiSource:', apiSource.value)
   proxy.enable = appSetting['network.proxy.enable']
   proxy.host = appSetting['network.proxy.host']
   proxy.port = appSetting['network.proxy.port']

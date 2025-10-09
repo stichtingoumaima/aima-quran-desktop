@@ -38,11 +38,13 @@ const {
 } = useList()
 
 watch(() => [props.sourceId, props.page], ([sourceId, page]) => {
+  console.log('🔄 Source/Page changed:', { sourceId, page, searchText: searchText.value })
   setTimeout(() => {
     search(searchText.value, sourceId as SearchSource, page as number || 1)
   })
 })
 watch(searchText, (searchText) => {
+  console.log('📝 Search text changed:', searchText)
   setTimeout(() => {
     search(searchText, props.sourceId, props.page)
   })

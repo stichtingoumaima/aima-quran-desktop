@@ -221,9 +221,13 @@ export const getOnlineOtherSourcePicByLocal = async(musicInfo: LX.Music.MusicInf
 export const TRY_QUALITYS_LIST = ['flac24bit', 'flac', '320k'] as const
 type TryQualityType = typeof TRY_QUALITYS_LIST[number]
 export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality => {
-  let type: LX.Quality = '128k'
+  // Special handling for Quran source - default to mp3
+  let type: LX.Quality = (musicInfo.source as string) === 'quran' ? 'mp3' : '128k'
+  console.log('🎯 getPlayQuality called:', { highQuality, source: musicInfo.source, availableQualities: musicInfo.meta._qualitys })
+  
   if (TRY_QUALITYS_LIST.includes(highQuality as TryQualityType)) {
     let list = qualityList.value[musicInfo.source]
+    console.log('📋 Quality list for source:', musicInfo.source, ':', list)
 
     let t = TRY_QUALITYS_LIST
       .slice(TRY_QUALITYS_LIST.indexOf(highQuality as TryQualityType))
@@ -231,6 +235,8 @@ export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.Musi
 
     if (t) type = t
   }
+  
+  console.log('✅ Selected quality:', type)
   return type
 }
 
@@ -269,6 +275,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
 
   let reqPromise
   try {
+    console.log('🎵 Calling getMusicUrl with quality:', itemQuality, 'for source:', musicInfo.source)
     reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
   } catch (err: any) {
     reqPromise = Promise.reject(err)

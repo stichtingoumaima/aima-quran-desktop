@@ -24,14 +24,18 @@ export default () => {
   })
 
   const search = (text: string, source: SearchSource, page: number) => {
+    console.log('🎼 MusicList search called:', { text, source, page })
     listInfo.value = listInfos[source] as ListInfo
     if (text.length) void addHistoryWord(text)
     void searchMusic(text, page, source).then((list: LX.Music.MusicInfo[]) => {
+      console.log('📊 Search result received:', list.length, 'items')
       if (list.length) {
         setTimeout(() => {
           if (listRef.value) listRef.value.scrollToTop()
         })
       }
+    }).catch(error => {
+      console.error('❌ Search error:', error)
     })
   }
 

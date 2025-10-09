@@ -5,6 +5,7 @@ import wy from './wy/index'
 import mg from './mg/index'
 import bd from './bd/index'
 import xm from './xm'
+import quran from './quran/index'
 import { supportQuality } from './api-source'
 
 
@@ -34,6 +35,10 @@ const sources = {
       name: '虾米音乐',
       id: 'xm',
     },
+    {
+      name: 'Quran.com',
+      id: 'quran',
+    },
     // {
     //   name: '百度音乐',
     //   id: 'bd',
@@ -46,6 +51,7 @@ const sources = {
   mg,
   bd,
   xm,
+  quran,
 }
 export default {
   ...sources,
