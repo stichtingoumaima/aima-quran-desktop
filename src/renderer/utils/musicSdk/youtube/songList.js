@@ -1,5 +1,6 @@
-import { playlist_info, search } from 'play-dl'
 import { formatDuration, extractReciterFromTitle, extractSurahFromTitle, isQuranRecitation } from './utils'
+import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
+import { rendererInvoke } from '@common/rendererIpc'
 
 export default {
   limit: 30,
@@ -12,21 +13,37 @@ export default {
     console.log('📋 YouTube songList.getPlaylistVideos called:', { playlistId, page, limit })
 
     const requestObj = {
-      promise: playlist_info(`https://www.youtube.com/playlist?list=${playlistId}`)
-        .then(playlist => {
-          console.log('📡 YouTube playlist response:', {
-            title: playlist.title,
-            videoCount: playlist.video_count,
-            channel: playlist.channel?.name,
+      promise: (async() => {
+        try {
+          console.log('📡 Getting YouTube playlist via IPC:', playlistId)
+
+          const response = await rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.youtube_get_playlist, {
+            playlistId,
           })
 
-          if (!playlist || !playlist.videos) {
-            return Promise.reject(new Error('No playlist videos found'))
+          if (!response.success) {
+            throw new Error(response.error || 'Failed to get YouTube playlist')
           }
 
+          const playlist = response.data
+          console.log('📡 YouTube playlist response:', {
+            title: playlist.header?.title?.text,
+            videoCount: playlist.contents?.length || 0,
+            channel: playlist.header?.subtitle?.text,
+          })
+
+          if (!playlist || !playlist.contents) {
+            throw new Error('No playlist videos found')
+          }
+
+          // Extract videos from playlist contents
+          const videos = playlist.contents
+            .filter(item => item.playlist_video_renderer)
+            .map(item => item.playlist_video_renderer)
+
           // Filter for Quran recitations
-          const quranVideos = playlist.videos.filter(video =>
-            isQuranRecitation(video.title),
+          const quranVideos = videos.filter(video =>
+            isQuranRecitation(video.title?.runs?.[0]?.text || video.title?.text),
           )
 
           // Apply pagination
@@ -48,19 +65,19 @@ export default {
             total: this.total,
             source: 'youtube',
             info: {
-              name: playlist.title,
-              author: playlist.channel?.name || 'YouTube Channel',
+              name: playlist.header?.title?.text || 'Unknown Playlist',
+              author: playlist.header?.subtitle?.text || 'YouTube Channel',
               desc: playlist.description || `Quran recitation playlist with ${quranVideos.length} videos`,
-              img: playlist.thumbnail?.url || '',
+              img: playlist.header?.playlist_header_banner?.hero_banner?.banner_image?.sources?.[0]?.url || '',
               play_count: null,
               total: quranVideos.length,
             },
           }
-        })
-        .catch(error => {
+        } catch (error) {
           console.error('❌ Error fetching playlist videos:', error)
-          return Promise.reject(error)
-        }),
+          throw error
+        }
+      })(),
     }
 
     return requestObj.promise
@@ -68,18 +85,20 @@ export default {
 
   // Transform YouTube video to music SDK format
   transformVideoToSong(video, playlist = null) {
-    const reciter = extractReciterFromTitle(video.title)
-    const surah = extractSurahFromTitle(video.title)
+    const title = video.title?.runs?.[0]?.text || video.title?.text || 'Unknown Title'
+    const reciter = extractReciterFromTitle(title)
+    const surah = extractSurahFromTitle(title)
+    const duration = video.length_seconds || video.duration?.seconds || 0
 
     return {
-      name: video.title,
+      name: title,
       singer: reciter,
       source: 'youtube',
-      songmid: `yt_${video.id}`,
-      albumId: playlist ? `yt_playlist_${playlist.id}` : `yt_channel_${video.channel?.id || 'unknown'}`,
-      interval: formatDuration(video.durationInSec || 0),
-      albumName: playlist ? playlist.title : (video.channel?.name || 'YouTube Channel'),
-      img: video.thumbnails?.[0]?.url || '',
+      songmid: `yt_${video.video_id}`,
+      albumId: playlist ? `yt_playlist_${playlist.id}` : `yt_channel_${video.short_byline_text?.runs?.[0]?.navigation_endpoint?.browse_endpoint?.browse_id || 'unknown'}`,
+      interval: formatDuration(duration),
+      albumName: playlist ? playlist.header?.title?.text : (video.short_byline_text?.runs?.[0]?.text || 'YouTube Channel'),
+      img: video.thumbnail?.thumbnails?.[0]?.url || '',
       lrc: null,
       types: [
         { type: 'mp4', size: '0MB' },
@@ -89,13 +108,13 @@ export default {
       },
       typeUrl: {},
       // YouTube-specific data
-      youtubeId: video.id,
-      youtubeUrl: video.url,
-      channelName: video.channel?.name,
-      channelId: video.channel?.id,
-      views: video.views,
-      uploadDate: video.uploadedAt,
-      duration: video.durationInSec,
+      youtubeId: video.video_id,
+      youtubeUrl: `https://www.youtube.com/watch?v=${video.video_id}`,
+      channelName: video.short_byline_text?.runs?.[0]?.text,
+      channelId: video.short_byline_text?.runs?.[0]?.navigation_endpoint?.browse_endpoint?.browse_id,
+      views: video.video_info?.runs?.[0]?.text,
+      uploadDate: video.video_info?.runs?.[1]?.text,
+      duration,
       // Quran-specific data
       reciterName: reciter,
       surahNumber: surah.number,
@@ -103,7 +122,7 @@ export default {
       isQuranRecitation: true,
       // Playlist-specific data
       playlistId: playlist?.id,
-      playlistTitle: playlist?.title,
+      playlistTitle: playlist?.header?.title?.text,
     }
   },
 
@@ -135,48 +154,66 @@ export default {
     console.log('🔍 Searching for Quran playlists:', str)
 
     const requestObj = {
-      promise: search(`${str} quran playlist`, {
-        limit,
-        type: 'playlist',
-      }).then(results => {
-        console.log('📡 YouTube playlist search response:', {
-          resultCount: results.length,
-          firstResult: results[0]?.title,
-        })
+      promise: (async() => {
+        try {
+          console.log('📡 Searching YouTube playlists via IPC:', `${str} quran playlist`)
 
-        if (!results || results.length === 0) {
-          console.log('❌ No playlist results found')
+          const response = await rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.youtube_search, {
+            query: `${str} quran playlist`,
+            page,
+            limit,
+          })
+
+          if (!response.success) {
+            throw new Error(response.error || 'YouTube playlist search failed')
+          }
+
+          const searchResponse = response.data
+          const results = searchResponse.contents?.two_column_search_results?.primary_contents?.section_list_contents?.contents || []
+          const playlists = results
+            .filter(item => item.playlist_renderer)
+            .map(item => item.playlist_renderer)
+            .slice(0, limit)
+
+          console.log('📡 YouTube playlist search response:', {
+            resultCount: playlists.length,
+            firstResult: playlists[0]?.title?.runs?.[0]?.text,
+          })
+
+          if (!playlists || playlists.length === 0) {
+            console.log('❌ No playlist results found')
+            return {
+              list: [],
+              allPage: 0,
+              limit: this.limit,
+              total: 0,
+              source: 'youtube',
+            }
+          }
+
+          // Filter and transform results
+          const filteredResults = playlists
+            .filter(playlist => this.isQuranPlaylist(playlist.title?.runs?.[0]?.text))
+            .map(playlist => this.transformPlaylistToSong(playlist))
+
+          console.log('🎯 Filtered playlist results:', filteredResults.length)
+
+          this.total = filteredResults.length
+          this.page = page
+          this.allPage = Math.ceil(this.total / limit)
+
           return {
-            list: [],
-            allPage: 0,
+            list: filteredResults,
+            allPage: this.allPage,
             limit: this.limit,
-            total: 0,
+            total: this.total,
             source: 'youtube',
           }
+        } catch (error) {
+          console.error('❌ YouTube playlist search error:', error)
+          return this.search(str, page, limit, retryNum)
         }
-
-        // Filter and transform results
-        const filteredResults = results
-          .filter(playlist => this.isQuranPlaylist(playlist.title))
-          .map(playlist => this.transformPlaylistToSong(playlist))
-
-        console.log('🎯 Filtered playlist results:', filteredResults.length)
-
-        this.total = filteredResults.length
-        this.page = page
-        this.allPage = Math.ceil(this.total / limit)
-
-        return {
-          list: filteredResults,
-          allPage: this.allPage,
-          limit: this.limit,
-          total: this.total,
-          source: 'youtube',
-        }
-      }).catch(error => {
-        console.error('❌ YouTube playlist search error:', error)
-        return this.search(str, page, limit, retryNum)
-      }),
+      })(),
     }
 
     return requestObj.promise
@@ -201,14 +238,14 @@ export default {
   // Transform playlist to song format (for display in lists)
   transformPlaylistToSong(playlist) {
     return {
-      name: playlist.title,
-      singer: playlist.channel?.name || 'YouTube Channel',
+      name: playlist.title?.runs?.[0]?.text || 'Unknown Playlist',
+      singer: playlist.short_byline_text?.runs?.[0]?.text || 'YouTube Channel',
       source: 'youtube',
-      songmid: `yt_playlist_${playlist.id}`,
-      albumId: `yt_playlist_${playlist.id}`,
+      songmid: `yt_playlist_${playlist.playlist_id}`,
+      albumId: `yt_playlist_${playlist.playlist_id}`,
       interval: '0:00:00', // Playlists don't have duration
-      albumName: playlist.channel?.name || 'YouTube Channel',
-      img: playlist.thumbnail?.url || '',
+      albumName: playlist.short_byline_text?.runs?.[0]?.text || 'YouTube Channel',
+      img: playlist.thumbnail_renderer?.playlist_video_thumbnail_renderer?.thumbnail?.thumbnails?.[0]?.url || '',
       lrc: null,
       types: [
         { type: 'mp4', size: '0MB' },
@@ -218,11 +255,11 @@ export default {
       },
       typeUrl: {},
       // YouTube-specific data
-      youtubePlaylistId: playlist.id,
-      youtubeUrl: playlist.url,
-      channelName: playlist.channel?.name,
-      channelId: playlist.channel?.id,
-      videoCount: playlist.video_count,
+      youtubePlaylistId: playlist.playlist_id,
+      youtubeUrl: `https://www.youtube.com/playlist?list=${playlist.playlist_id}`,
+      channelName: playlist.short_byline_text?.runs?.[0]?.text,
+      channelId: playlist.short_byline_text?.runs?.[0]?.navigation_endpoint?.browse_endpoint?.browse_id,
+      videoCount: playlist.video_count?.text || playlist.video_count,
       isPlaylist: true,
     }
   },

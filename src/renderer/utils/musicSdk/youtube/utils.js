@@ -78,6 +78,10 @@ export const extractSurahFromTitle = (title) => {
 export const isQuranRecitation = (title) => {
   if (!title) return false
 
+  // Handle new API format where title might be an object
+  const titleText = typeof title === 'string' ? title : (title.text || title.title || '')
+  if (!titleText) return false
+
   const keywords = [
     'quran', 'koran', 'qur\'an', 'qur\'ān',
     'surah', 'sura', 'chapter',
@@ -86,7 +90,7 @@ export const isQuranRecitation = (title) => {
     'sheikh', 'imam', 'qari',
   ]
 
-  const lowerTitle = title.toLowerCase()
+  const lowerTitle = titleText.toLowerCase()
   return keywords.some(keyword => lowerTitle.includes(keyword))
 }
 

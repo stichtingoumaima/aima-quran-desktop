@@ -98,7 +98,7 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
       sortId: '',
     })
   }
-  
+
   let listInfo = listInfos[sourceId]!
   listInfo.page = 1
   listInfo.limit = 20

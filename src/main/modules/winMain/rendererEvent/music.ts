@@ -1,8 +1,11 @@
 import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { mainHandle } from '@common/mainIpc'
-
+import { setupYouTubeHandlers } from './youtube'
 
 export default () => {
+  // Setup YouTube handlers
+  setupYouTubeHandlers()
+
   // =========================歌词=========================
   mainHandle<string, LX.Player.LyricInfo>(WIN_MAIN_RENDERER_EVENT_NAME.get_palyer_lyric, async({ params: id }) => {
     // return (getStore(LRC_EDITED, true, false).get(id) as LX.Music.LyricInfo | undefined) ??
@@ -41,7 +44,6 @@ export default () => {
     return global.lx.worker.dbService.editedLyricCount()
   })
 
-
   // =========================歌曲URL=========================
   mainHandle<string, string>(WIN_MAIN_RENDERER_EVENT_NAME.get_music_url, async({ params: id }) => {
     return (await global.lx.worker.dbService.getMusicUrl(id)) ?? ''
@@ -76,7 +78,6 @@ export default () => {
   // mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.clear_dislike_music_infos, async() => {
   //   await global.lx.worker.dbService.dislikeInfoClear()
   // })
-
 
   // =========================我的列表=========================
   // mainHandle<boolean>(WIN_MAIN_RENDERER_EVENT_NAME.get_playlist, async({ params: isIgnoredError = false }) => {

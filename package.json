@@ -191,13 +191,13 @@
     "music-metadata": "^11.9.0",
     "needle": "github:lyswhut/needle#93299ac841b7e9a9f82ca7279b88aaaeda404060",
     "node-id3": "^0.2.9",
-    "play-dl": "^1.9.7",
     "sortablejs": "^1.15.6",
     "tunnel": "^0.0.6",
     "utf-8-validate": "^6.0.5",
     "vue": "~3.3.13",
     "vue-router": "^4.5.1",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "youtubei.js": "^15.1.1"
   },
   "overrides": {
     "got": "^11",

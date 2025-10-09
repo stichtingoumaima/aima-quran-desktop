@@ -134,6 +134,10 @@ const modules = {
     clear_music_url: 'clear_music_url',
     get_music_url_count: 'get_music_url_count',
 
+    youtube_search: 'youtube_search',
+    youtube_get_stream: 'youtube_get_stream',
+    youtube_get_playlist: 'youtube_get_playlist',
+
     open_api_action: 'open_api_action',
     sync_action: 'sync_action',
     sync_get_server_devices: 'sync_get_server_devices',
