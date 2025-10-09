@@ -224,7 +224,7 @@ export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.Musi
   // Special handling for Quran source - default to mp3
   let type: LX.Quality = (musicInfo.source as string) === 'quran' ? 'mp3' : '128k'
   console.log('🎯 getPlayQuality called:', { highQuality, source: musicInfo.source, availableQualities: musicInfo.meta._qualitys })
-  
+
   if (TRY_QUALITYS_LIST.includes(highQuality as TryQualityType)) {
     let list = qualityList.value[musicInfo.source]
     console.log('📋 Quality list for source:', musicInfo.source, ':', list)
@@ -235,7 +235,7 @@ export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.Musi
 
     if (t) type = t
   }
-  
+
   console.log('✅ Selected quality:', type)
   return type
 }

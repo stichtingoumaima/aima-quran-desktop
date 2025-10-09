@@ -99,10 +99,10 @@ export default {
       name: verse.text,
       singer: 'Quran',
       source: 'quran',
-      songmid: `verse_${verse.verseKey}`,
-      albumId: `chapter_${verse.verseKey.split(':')[0]}`,
+      songmid: `verse_${verse.verseKey || 'unknown'}`,
+      albumId: `chapter_${verse.verseKey ? verse.verseKey.split(':')[0] : 'unknown'}`,
       interval: '0:00',
-      albumName: `Surah ${verse.verseKey.split(':')[0]}`,
+      albumName: `Surah ${verse.verseKey ? verse.verseKey.split(':')[0] : 'unknown'}`,
       img: '',
       lrc: null,
       types: [

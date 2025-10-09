@@ -96,6 +96,7 @@ export const sourceNames = computed(() => {
     mg: 'mg',
     wy: 'wy',
     quran: 'quran',
+    youtube: 'youtube',
     all: window.i18n.t(prefix + 'all' as any),
   }
   for (const { id } of music.sources) {

@@ -9,6 +9,7 @@ import { apiSource, userApi } from '@renderer/store'
 // import api_test_wy from './wy/api-test'
 
 import api_test_quran from './quran/api-test'
+import api_test_youtube from './youtube/api-test'
 
 const allApi = {
   // temp_kw: api_temp_kw,
@@ -22,6 +23,10 @@ const allApi = {
   test_api_quran: api_test_quran, // Add alias for the mapping logic
   temp_quran: api_test_quran, // Use the same API for temp source
   temp_api_quran: api_test_quran, // Add alias for the mapping logic
+  test_youtube: api_test_youtube,
+  test_api_youtube: api_test_youtube, // Add alias for the mapping logic
+  temp_youtube: api_test_youtube, // Use the same API for temp source
+  temp_api_youtube: api_test_youtube, // Add alias for the mapping logic
 }
 
 const apiList = {}

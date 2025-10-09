@@ -1,8 +1,8 @@
-import { markRawList } from '@common/utils/vueTools'
+import { markRawList, reactive } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
 import { sortInsert, similar } from '@common/utils/common'
 
-import type { ListInfoItem } from './state'
+import type { ListInfoItem, SearchListInfo } from './state'
 import { sources, maxPages, listInfos } from './state'
 
 interface SearchResult {
@@ -60,6 +60,19 @@ const setLists = (results: SearchResult[], page: number, text: string): ListInfo
 
 const setList = (datas: SearchResult, page: number, text: string): ListInfoItem[] => {
   // console.log(datas.source, datas.list)
+  // Initialize if not exists
+  if (!listInfos[datas.source]) {
+    listInfos[datas.source] = reactive<SearchListInfo>({
+      page: 1,
+      limit: 18,
+      total: 0,
+      list: [],
+      key: null,
+      noItemLabel: '',
+      tagId: '',
+      sortId: '',
+    })
+  }
   let listInfo = listInfos[datas.source]!
   listInfo.list = markRawList(datas.list)
   if (page == 1 || (datas.total && datas.list.length)) listInfo.total = datas.total
@@ -72,6 +85,20 @@ const setList = (datas: SearchResult, page: number, text: string): ListInfoItem[
 }
 
 export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
+  // Initialize if not exists
+  if (!listInfos[sourceId]) {
+    listInfos[sourceId] = reactive<SearchListInfo>({
+      page: 1,
+      limit: 18,
+      total: 0,
+      list: [],
+      key: null,
+      noItemLabel: '',
+      tagId: '',
+      sortId: '',
+    })
+  }
+  
   let listInfo = listInfos[sourceId]!
   listInfo.page = 1
   listInfo.limit = 20
@@ -86,7 +113,7 @@ export const resetListInfo = (sourceId: LX.OnlineSource | 'all'): [] => {
 
 export const search = async(text: string, page: number, sourceId: LX.OnlineSource | 'all'): Promise<ListInfoItem[]> => {
   const listInfo = listInfos[sourceId]!
-  
+
   // Special handling for Quran source - show reciters even without search text
   if (!text && sourceId === 'quran') {
     console.log('🕌 Quran songlist search - showing reciters without search text')
@@ -104,7 +131,7 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
       throw error
     })
   }
-  
+
   if (!text) return resetListInfo(sourceId)
   const key = `${page}__${sourceId}__${text}`
   if (listInfo.key == key && listInfo.list.length) return listInfo.list

@@ -17,6 +17,7 @@ const sources: Array<{
       wy: ['128k'],
       mg: ['128k'],
       quran: ['mp3'],
+      youtube: ['128k', '192k'] as any,
       // bd: ['128k'],
     },
   },
@@ -27,6 +28,7 @@ const sources: Array<{
     supportQualitys: {
       kw: ['128k'],
       quran: ['mp3'],
+      youtube: ['128k', '192k'] as any,
     },
   },
 ]
