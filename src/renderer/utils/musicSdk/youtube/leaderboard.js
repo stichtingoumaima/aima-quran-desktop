@@ -1,5 +1,6 @@
-// Leaderboard for popular YouTube Quran playlists and channels
-// These are curated popular Quran content from YouTube
+import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
+import { rendererInvoke } from '@common/rendererIpc'
+import { formatDuration, parseReadableDate } from './utils'
 
 export default {
   limit: 30,
@@ -7,175 +8,101 @@ export default {
   page: 0,
   allPage: 1,
 
-  // Get popular Quran playlists and channels
-  getList(id, page = 1, limit = 30) {
-    console.log('🏆 YouTube leaderboard.getList called:', { id, page, limit })
-
-    // Curated list of popular Quran playlists and channels
-    const popularContent = [
-      {
-        id: 'PLA8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Mishary Rashid Alafasy',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Mishary Rashid Alafasy',
-        popularity: 100,
-        rank: 1,
-      },
-      {
-        id: 'PLB8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Abdul Rahman Al-Sudais',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Abdul Rahman Al-Sudais',
-        popularity: 95,
-        rank: 2,
-      },
-      {
-        id: 'PLC8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Maher Al Mueaqly',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Maher Al Mueaqly',
-        popularity: 90,
-        rank: 3,
-      },
-      {
-        id: 'PLD8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Saad Al-Ghamdi',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Saad Al-Ghamdi',
-        popularity: 85,
-        rank: 4,
-      },
-      {
-        id: 'PLE8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Muhammad Al-Luhaidan',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Muhammad Al-Luhaidan',
-        popularity: 80,
-        rank: 5,
-      },
-      {
-        id: 'PLF8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Fares Abbad',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Fares Abbad',
-        popularity: 75,
-        rank: 6,
-      },
-      {
-        id: 'PLG8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Khalid Al-Jalil',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Khalid Al-Jalil',
-        popularity: 70,
-        rank: 7,
-      },
-      {
-        id: 'PLH8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Abdullah Al-Matroud',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Abdullah Al-Matroud',
-        popularity: 65,
-        rank: 8,
-      },
-      {
-        id: 'PLI8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Yasser Al-Dosari',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Yasser Al-Dosari',
-        popularity: 60,
-        rank: 9,
-      },
-      {
-        id: 'PLJ8B5A4A4A4A4A4A4',
-        title: 'Complete Quran - Sheikh Bandar Baleelah',
-        type: 'playlist',
-        channel: 'Quran Recitation',
-        description: 'Complete Quran recitation by Sheikh Bandar Baleelah',
-        popularity: 55,
-        rank: 10,
-      },
-    ]
-
-    return Promise.resolve(popularContent)
+  // YouTube Base64 parameters for different sorting/filtering options
+  getParamsForCategory(category) {
+    const paramsMap = {
+      most_viewed: 'CAMSAhAB', // Most Viewed
+      recent_uploads: 'CAISAhAB', // Recent Uploads
+      trending_now: 'EgIIAg==', // Trending (This Week)
+      live_recitations: 'EgJAAQ==', // Live
+    }
+    return paramsMap[category] || 'EgIIAg==' // Default to trending
   },
 
-  // Search popular content
-  search(str, page = 1, limit, retryNum = 0) {
-    console.log('🏆 YouTube leaderboard.search called:', { str, page, limit })
+  async getList(id, page = 1, limit = 30) {
+    console.log('🏆 Fetching leaderboard:', { id, page, limit })
 
-    return this.getList(page, limit).then(popularContent => {
-      let filteredContent = popularContent
+    try {
+      const category = id.replace('youtube__', '')
+      const params = this.getParamsForCategory(category)
 
-      // Filter by search term if provided
-      if (str && str.trim()) {
-        const searchTerm = str.toLowerCase().trim()
-        filteredContent = popularContent.filter(item =>
-          (item.title && item.title.toLowerCase().includes(searchTerm)) ||
-          (item.channel && item.channel.toLowerCase().includes(searchTerm)) ||
-          (item.description && item.description.toLowerCase().includes(searchTerm)),
-        )
+      const response = await rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.youtube_get_trending, {
+        category,
+        page,
+        limit,
+        params, // Pass the Base64 params to the YouTube API
+      })
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch trending data')
       }
 
-      // Transform to music SDK format
-      const list = filteredContent.map(item => ({
-        name: item.title,
-        singer: item.channel,
-        source: 'youtube',
-        songmid: `yt_leaderboard_${item.rank}`,
-        albumId: `yt_${item.type}_${item.id}`,
-        interval: '0:00:00',
-        albumName: item.type === 'playlist' ? 'Popular Playlists' : 'Popular Channels',
-        img: '',
-        lrc: '',
-        lrcUrl: '',
-        otherSource: [],
-        types: [],
-        _types: [],
-        meta: {
-          youtubeId: item.id,
-          youtubeType: item.type,
-          youtubeUrl: item.type === 'playlist'
-            ? `https://www.youtube.com/playlist?list=${item.id}`
-            : `https://www.youtube.com/channel/${item.id}`,
-          channelName: item.channel,
-          description: item.description,
-          popularity: item.popularity,
-          rank: item.rank,
-        },
-      }))
+      const trendingData = response.data || []
+      const list = trendingData.map((video, index) =>
+        this.transformTrendingVideo(video, (page - 1) * limit + index + 1, category),
+      )
 
-      // Apply pagination
-      const startIndex = (page - 1) * limit
-      const endIndex = startIndex + limit
-      const paginatedList = list.slice(startIndex, endIndex)
+      this.total = response.total || trendingData.length
+      this.page = page
+      this.allPage = Math.ceil(this.total / limit)
 
       return {
-        list: paginatedList,
-        allPage: Math.ceil(list.length / limit),
+        list,
+        total: this.total,
+        page: this.page,
         limit: this.limit,
-        total: list.length,
         source: 'youtube',
       }
-    })
+    } catch (error) {
+      console.error('❌ Error fetching YouTube trending data:', error)
+      return { list: [], total: 0, page: 1, limit: this.limit, source: 'youtube' }
+    }
   },
 
-  // Add missing methods required by the interface
+  transformTrendingVideo(video, rank, category) {
+    const title = video.title?.text || 'Unknown Title'
+    const channelName = video.author?.name || 'Unknown Channel'
+    const uploadDateText = video.published?.text
+
+    return {
+      name: title,
+      singer: channelName,
+      source: 'youtube',
+      songmid: `yt_${video.video_id}`,
+      albumId: `yt_channel_${video.author?.id || 'unknown'}`,
+      interval: formatDuration(video.duration || 0),
+      albumName: `${video.view_count?.text || '0 views'} • ${uploadDateText || 'Unknown date'}`,
+      img: video.thumbnails?.[0]?.url || '',
+      lrc: null,
+      types: [{ type: 'mp4', size: '0MB' }],
+      _types: { mp4: { size: '0MB' } },
+      typeUrl: {},
+      youtubeId: video.video_id,
+      youtubeUrl: `https://www.youtube.com/watch?v=${video.video_id}`,
+      channelName,
+      channelId: video.author?.id,
+      views: video.view_count?.text,
+      uploadDate: parseReadableDate(uploadDateText),
+      duration: video.duration || 0,
+      reciterName: video.reciterName || 'Unknown Reciter',
+      surahNumber: video.surahNumber || 0,
+      surahName: video.surahName || 'Unknown Surah',
+      isQuranRecitation: true,
+      rank,
+      category,
+      lastUpdated: new Date().toISOString(),
+    }
+  },
+
   getBoards() {
     return Promise.resolve({
       list: [
-        { id: 'youtube__popular_playlists', name: 'Popular Playlists', bangid: 'popular_playlists' },
-        { id: 'youtube__trending_channels', name: 'Trending Channels', bangid: 'trending_channels' },
-        { id: 'youtube__top_reciters', name: 'Top Reciters', bangid: 'top_reciters' },
+        { id: 'youtube__trending_now', name: 'Trending', bangid: 'trending_now' },
+        { id: 'youtube__most_viewed', name: 'Most Viewed', bangid: 'most_viewed' },
+        { id: 'youtube__recent_uploads', name: 'Recent Uploads', bangid: 'recent_uploads' },
+        { id: 'youtube__live_recitations', name: 'Live Recitations', bangid: 'live_recitations' },
       ],
+      source: 'youtube',
     })
   },
 }

@@ -597,4 +597,604 @@ export const setupYouTubeHandlers = () => {
       }
     }
   })
+
+  // YouTube trending/charts handler
+  mainHandle<{ category: string, page?: number, limit?: number, params?: string }, any>(WIN_MAIN_RENDERER_EVENT_NAME.youtube_get_trending, async({ params: { category = 'trending_now', page = 1, limit = 50, params } }) => {
+    try {
+      console.log('🔥 YouTube trending request in main process:', { category, page, limit, params })
+      const yt = await getYouTubeClient()
+      
+      // Use native YouTube API methods for specific categories
+      if (category === 'trending_now') {
+        console.log('🎯 Using search-based trending for Quran recitations with manual date sorting')
+        try {
+          // Use search for trending content (no sorting in API call)
+          const searchResponse = await yt.search('quran recitation trending', { 
+            type: 'video'
+          })
+          
+          if (searchResponse?.results) {
+            const videos = searchResponse.results
+              .filter((video: any) => isQuranRecitation(video.title?.text || video.title))
+              .map((video: any) => enhanceVideoWithPopularityData(video, category))
+            
+            // Remove duplicates and calculate popularity scores
+            const uniqueVideos = removeDuplicateVideos(videos)
+            const scoredVideos = uniqueVideos.map(video => ({
+              ...video,
+              popularityScore: calculatePopularityScore(video, category),
+              lastUpdated: new Date().toISOString()
+            }))
+
+            // Filter for videos uploaded within the last 6 months for trending
+            const sixMonthsAgo = new Date()
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+            
+            let filteredVideos = scoredVideos.filter(video => {
+              if (!video.uploadDate) return true // Include videos without date info
+              const uploadDate = new Date(video.uploadDate)
+              return uploadDate >= sixMonthsAgo
+            })
+
+            // If no recent videos, fall back to all videos but prioritize recent ones
+            if (filteredVideos.length === 0) {
+              console.log('⚠️ No recent trending videos found, using all videos with recent prioritization')
+              filteredVideos = scoredVideos
+            }
+
+            // Sort by upload date (newest first) for trending
+            filteredVideos.sort((a, b) => {
+              const dateA = new Date(a.uploadDate || new Date())
+              const dateB = new Date(b.uploadDate || new Date())
+              return dateB.getTime() - dateA.getTime()
+            })
+
+            // Apply pagination
+            const startIndex = (page - 1) * limit
+            const endIndex = startIndex + limit
+            const paginatedVideos = filteredVideos.slice(startIndex, endIndex)
+
+            console.log('📊 YouTube search-based trending results:', {
+              category,
+              totalVideos: filteredVideos.length,
+              returnedVideos: paginatedVideos.length,
+              topScore: filteredVideos[0]?.popularityScore || 0,
+              dateFilter: '6 months',
+              sortBy: 'manual_upload_date_sort'
+            })
+
+            return {
+              success: true,
+              data: paginatedVideos,
+              total: filteredVideos.length,
+              page,
+              limit,
+              category,
+              method: 'search_based_trending'
+            }
+          }
+        } catch (trendingError) {
+          console.log('⚠️ Search-based trending failed, falling back to search:', trendingError.message)
+        }
+      } else if (category === 'most_viewed') {
+        console.log('🎯 Using search for most viewed with manual date sorting')
+        try {
+          const searchResponse = await yt.search('quran recitation', { 
+            type: 'video'
+          })
+          
+          if (searchResponse?.results) {
+            const videos = searchResponse.results
+              .filter((video: any) => isQuranRecitation(video.title?.text || video.title))
+              .map((video: any) => enhanceVideoWithPopularityData(video, category))
+            
+            // Remove duplicates and calculate popularity scores
+            const uniqueVideos = removeDuplicateVideos(videos)
+            const scoredVideos = uniqueVideos.map(video => ({
+              ...video,
+              popularityScore: calculatePopularityScore(video, category),
+              lastUpdated: new Date().toISOString()
+            }))
+
+            // Sort by upload date (newest first) for most viewed
+            scoredVideos.sort((a, b) => {
+              const dateA = new Date(a.uploadDate || new Date())
+              const dateB = new Date(b.uploadDate || new Date())
+              return dateB.getTime() - dateA.getTime()
+            })
+
+            // Apply pagination
+            const startIndex = (page - 1) * limit
+            const endIndex = startIndex + limit
+            const paginatedVideos = scoredVideos.slice(startIndex, endIndex)
+
+            console.log('📊 YouTube most viewed results with manual date sorting:', {
+              category,
+              totalVideos: scoredVideos.length,
+              returnedVideos: paginatedVideos.length,
+              topScore: scoredVideos[0]?.popularityScore || 0,
+              sortBy: 'manual_upload_date_sort'
+            })
+
+            return {
+              success: true,
+              data: paginatedVideos,
+              total: scoredVideos.length,
+              page,
+              limit,
+              category,
+              method: 'search_with_manual_date_sort'
+            }
+          }
+        } catch (mostViewedError) {
+          console.log('⚠️ Native most viewed search failed, falling back to search:', mostViewedError.message)
+        }
+      } else if (category === 'recent_uploads') {
+        console.log('🎯 Using native YouTube search with sort_by_upload_date for recent uploads')
+        try {
+          const searchResponse = await yt.search('quran recitation', { 
+            type: 'video',
+            sort_by: 'upload_date'
+          })
+          
+          if (searchResponse?.results) {
+            const videos = searchResponse.results
+              .filter((video: any) => isQuranRecitation(video.title?.text || video.title))
+              .map((video: any) => enhanceVideoWithPopularityData(video, category))
+            
+            // Remove duplicates and calculate popularity scores
+            const uniqueVideos = removeDuplicateVideos(videos)
+            const scoredVideos = uniqueVideos.map(video => ({
+              ...video,
+              popularityScore: calculatePopularityScore(video, category),
+              lastUpdated: new Date().toISOString()
+            }))
+
+            // Sort by upload date (newest first) for recent uploads
+            scoredVideos.sort((a, b) => {
+              const dateA = new Date(a.uploadDate || new Date())
+              const dateB = new Date(b.uploadDate || new Date())
+              return dateB.getTime() - dateA.getTime()
+            })
+
+            // Apply pagination
+            const startIndex = (page - 1) * limit
+            const endIndex = startIndex + limit
+            const paginatedVideos = scoredVideos.slice(startIndex, endIndex)
+
+            console.log('📊 YouTube native recent uploads results:', {
+              category,
+              totalVideos: scoredVideos.length,
+              returnedVideos: paginatedVideos.length,
+              topScore: scoredVideos[0]?.popularityScore || 0
+            })
+
+            return {
+              success: true,
+              data: paginatedVideos,
+              total: scoredVideos.length,
+              page,
+              limit,
+              category,
+              method: 'native_recent_uploads'
+            }
+          }
+        } catch (recentUploadsError) {
+          console.log('⚠️ Native recent uploads search failed, falling back to search:', recentUploadsError.message)
+        }
+      }
+      
+      // If params are provided, use YouTube's internal search with parameters
+      if (params) {
+        console.log('🎯 Using YouTube params for precise filtering:', params)
+        try {
+          // Use YouTube's search with the provided Base64 params
+          const searchResponse = await yt.search('quran recitation', { 
+            type: 'video',
+            params: params // Pass the Base64 params directly to YouTube
+          })
+          
+          if (searchResponse?.results) {
+            const videos = searchResponse.results
+              .filter((video: any) => isQuranRecitation(video.title?.text || video.title))
+              .map((video: any) => enhanceVideoWithPopularityData(video, category))
+            
+            // Remove duplicates and calculate popularity scores
+            const uniqueVideos = removeDuplicateVideos(videos)
+            const scoredVideos = uniqueVideos.map(video => ({
+              ...video,
+              popularityScore: calculatePopularityScore(video, category),
+              lastUpdated: new Date().toISOString()
+            }))
+
+            // Apply date-based filtering for recent content categories
+            let filteredVideos = scoredVideos
+            if (category === 'recent_uploads') {
+              // Filter for videos uploaded within the last 2 years, but prioritize recent ones
+              const twoYearsAgo = new Date()
+              twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
+              
+              filteredVideos = scoredVideos.filter(video => {
+                if (!video.uploadDate) return true // Include videos without date info
+                const uploadDate = new Date(video.uploadDate)
+                return uploadDate >= twoYearsAgo
+              })
+              
+              // Sort by upload date (newest first) for recent uploads
+              filteredVideos.sort((a, b) => {
+                const dateA = new Date(a.uploadDate || new Date())
+                const dateB = new Date(b.uploadDate || new Date())
+                return dateB.getTime() - dateA.getTime()
+              })
+            } else {
+              // Sort by popularity score for other categories
+              filteredVideos.sort((a, b) => b.popularityScore - a.popularityScore)
+            }
+
+            // If no videos after date filtering, fall back to all videos with date-based sorting
+            if (filteredVideos.length === 0) {
+              console.log('⚠️ No videos after date filtering, falling back to all videos with date-based sorting')
+              filteredVideos = scoredVideos
+              if (category === 'recent_uploads') {
+                // Sort by upload date (newest first) for recent uploads
+                filteredVideos.sort((a, b) => {
+                  const dateA = new Date(a.uploadDate || new Date())
+                  const dateB = new Date(b.uploadDate || new Date())
+                  return dateB.getTime() - dateA.getTime()
+                })
+              } else {
+                // Sort by popularity score for other categories
+                filteredVideos.sort((a, b) => b.popularityScore - a.popularityScore)
+              }
+            }
+
+            // Apply pagination
+            const startIndex = (page - 1) * limit
+            const endIndex = startIndex + limit
+            const paginatedVideos = filteredVideos.slice(startIndex, endIndex)
+
+            console.log('📊 YouTube trending results with params:', {
+              category,
+              params,
+              totalVideos: filteredVideos.length,
+              returnedVideos: paginatedVideos.length,
+              topScore: filteredVideos[0]?.popularityScore || 0,
+              dateFilter: category === 'recent_uploads' ? '2 years' : 'none'
+            })
+
+            return {
+              success: true,
+              data: paginatedVideos,
+              total: filteredVideos.length,
+              page,
+              limit,
+              category,
+              params,
+              method: 'params_search'
+            }
+          }
+        } catch (paramsError) {
+          console.log('⚠️ YouTube params search failed, falling back to query-based search:', paramsError.message)
+        }
+      }
+      
+      // Fallback to query-based search if params fail or not provided
+      console.log('🔄 Using fallback query-based search for category:', category)
+      
+      // Define search queries based on category with date-specific terms
+      const currentYear = new Date().getFullYear()
+      const searchQueries = {
+        trending_now: [
+          `quran recitation ${currentYear}`,
+          `quran tilawah ${currentYear}`,
+          'quran recitation new',
+          'quran recitation latest',
+          'quran recitation trending'
+        ],
+        most_viewed: ['quran recitation', 'quran tilawah', 'quran reciter'],
+        recent_uploads: [
+          `quran recitation ${currentYear}`,
+          `quran recitation ${currentYear - 1}`,
+          'quran recitation new',
+          'quran recitation latest',
+          'quran tilawah new',
+          'quran reciter latest',
+          'quran recitation uploaded today',
+          'quran recitation this week'
+        ],
+        live_recitations: ['quran recitation live', 'quran tilawah live', 'quran reciter live'],
+        top_reciters: ['mishary rashid alafasy', 'abdul rahman al-sudais', 'maher al mueaqly', 'saad al-ghamdi'],
+        popular_surahs: ['surah al-fatiha', 'ayat al-kursi', 'surah al-baqarah', 'surah yasin'],
+        by_style: ['quran murattal', 'quran mujawwad', 'quran hafs', 'quran warsh'],
+        viral: ['quran recitation', 'quran tilawah', 'quran reciter']
+      }
+
+      const queries = searchQueries[category] || searchQueries.trending_now
+      console.log('🔍 Using search queries:', queries)
+
+      // Search for videos using multiple queries
+      const allVideos = []
+      for (const query of queries) {
+        try {
+          const searchResponse = await yt.search(query, { type: 'video' })
+          if (searchResponse?.results) {
+            const videos = searchResponse.results
+              .filter((video: any) => isQuranRecitation(video.title?.text || video.title))
+              .map((video: any) => enhanceVideoWithPopularityData(video, category))
+            
+            allVideos.push(...videos)
+          }
+        } catch (error) {
+          console.log('⚠️ Search query failed:', query, error.message)
+        }
+      }
+
+      // Remove duplicates and calculate popularity scores
+      const uniqueVideos = removeDuplicateVideos(allVideos)
+      const scoredVideos = uniqueVideos.map(video => ({
+        ...video,
+        popularityScore: calculatePopularityScore(video, category),
+        lastUpdated: new Date().toISOString()
+      }))
+
+      // Apply date-based filtering for recent content categories
+      let filteredVideos = scoredVideos.filter(video => video.popularityScore > 0)
+      
+      if (category === 'recent_uploads') {
+        // Filter for videos uploaded within the last 2 years, but prioritize recent ones
+        const twoYearsAgo = new Date()
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
+        
+        filteredVideos = filteredVideos.filter(video => {
+          if (!video.uploadDate) return true // Include videos without date info
+          const uploadDate = new Date(video.uploadDate)
+          return uploadDate >= twoYearsAgo
+        })
+        
+        // Sort by upload date (newest first) for recent uploads
+        filteredVideos.sort((a, b) => {
+          const dateA = new Date(a.uploadDate || new Date())
+          const dateB = new Date(b.uploadDate || new Date())
+          return dateB.getTime() - dateA.getTime()
+        })
+      } else if (category === 'trending_now') {
+        // Filter for videos uploaded within the last 1 year for trending
+        const oneYearAgo = new Date()
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+        
+        filteredVideos = filteredVideos.filter(video => {
+          if (!video.uploadDate) return true // Include videos without date info
+          const uploadDate = new Date(video.uploadDate)
+          return uploadDate >= oneYearAgo
+        })
+        
+        // Sort by popularity score for trending
+      filteredVideos.sort((a, b) => b.popularityScore - a.popularityScore)
+      } else {
+        // Sort by popularity score for other categories
+        filteredVideos.sort((a, b) => b.popularityScore - a.popularityScore)
+      }
+
+      // If no videos after date filtering, fall back to all videos with date-based sorting
+      if (filteredVideos.length === 0) {
+        console.log('⚠️ No videos after date filtering (fallback), falling back to all videos with date-based sorting')
+        filteredVideos = scoredVideos.filter(video => video.popularityScore > 0)
+        if (category === 'recent_uploads') {
+          // Sort by upload date (newest first) for recent uploads
+          filteredVideos.sort((a, b) => {
+            const dateA = new Date(a.uploadDate || new Date())
+            const dateB = new Date(b.uploadDate || new Date())
+            return dateB.getTime() - dateA.getTime()
+          })
+        } else if (category === 'trending_now') {
+          // Sort by popularity score for trending
+          filteredVideos.sort((a, b) => b.popularityScore - a.popularityScore)
+        }
+      }
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedVideos = filteredVideos.slice(startIndex, endIndex)
+
+      console.log('📊 YouTube trending results (fallback):', {
+        category,
+        totalVideos: filteredVideos.length,
+        returnedVideos: paginatedVideos.length,
+        topScore: filteredVideos[0]?.popularityScore || 0,
+        dateFilter: category === 'recent_uploads' ? '2 years' : category === 'trending_now' ? '1 year' : 'none'
+      })
+
+      return {
+        success: true,
+        data: paginatedVideos,
+        total: filteredVideos.length,
+        page,
+        limit,
+        category
+      }
+    } catch (error) {
+      console.error('❌ YouTube trending error:', error)
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+  })
+
+  // Helper function to check if video is Quran recitation
+  function isQuranRecitation(title: string): boolean {
+    if (!title) return false
+    
+    const keywords = [
+      'quran', 'koran', 'qur\'an', 'qur\'ān',
+      'recitation', 'recite', 'tilawah',
+      'mishary', 'sudais', 'shuraim', 'maher', 'hudhaify',
+      'sheikh', 'imam', 'qari', 'surah', 'ayat'
+    ]
+    
+    const lowerTitle = title.toLowerCase()
+    return keywords.some(keyword => lowerTitle.includes(keyword))
+  }
+
+  // Helper function to enhance video with popularity data
+  function enhanceVideoWithPopularityData(video: any, category: string) {
+    const title = video.title?.text || video.title || 'Unknown Title'
+    const viewCount = video.view_count?.text || video.view_count || '0'
+    const uploadDate = video.published?.text || video.published || new Date().toISOString()
+    
+    return {
+      video_id: video.video_id || video.id,
+      title: { text: title },
+      author: { name: video.author?.name || 'Unknown Channel' },
+      view_count: { text: viewCount },
+      published: { text: uploadDate },
+      thumbnails: video.thumbnails || [{ url: 'https://i.ytimg.com/vi/example/maxresdefault.jpg' }],
+      duration: video.duration?.seconds || 0,
+      // Quran-specific data
+      reciterName: extractReciterFromTitle(title),
+      surahNumber: extractSurahFromTitle(title).number,
+      surahName: extractSurahFromTitle(title).name,
+      isQuranRecitation: true,
+      category
+    }
+  }
+
+  // Helper function to extract reciter from title
+  function extractReciterFromTitle(title: string): string {
+    const reciters = [
+      'Mishary Rashid Alafasy', 'Abdul Rahman Al-Sudais', 'Maher Al Mueaqly',
+      'Saad Al-Ghamdi', 'Muhammad Al-Luhaidan', 'Fares Abbad',
+      'Khalid Al-Jalil', 'Abdullah Al-Matroud', 'Yasser Al-Dosari',
+      'Bandar Baleelah', 'Muhammad Siddiq Al-Minshawi', 'Mahmoud Khalil Al-Husary'
+    ]
+    
+    for (const reciter of reciters) {
+      if (title.toLowerCase().includes(reciter.toLowerCase())) {
+        return reciter
+      }
+    }
+    
+    return 'Unknown Reciter'
+  }
+
+  // Helper function to extract surah from title
+  function extractSurahFromTitle(title: string): { number: number, name: string } {
+    const surahs = [
+      { number: 1, name: 'Al-Fatiha' },
+      { number: 2, name: 'Al-Baqarah' },
+      { number: 3, name: 'Ali Imran' },
+      { number: 4, name: 'An-Nisa' },
+      { number: 5, name: 'Al-Maidah' },
+      { number: 36, name: 'Yasin' },
+      { number: 67, name: 'Al-Mulk' },
+      { number: 112, name: 'Al-Ikhlas' },
+      { number: 113, name: 'Al-Falaq' },
+      { number: 114, name: 'An-Nas' }
+    ]
+    
+    const lowerTitle = title.toLowerCase()
+    
+    for (const surah of surahs) {
+      if (lowerTitle.includes(surah.name.toLowerCase()) || 
+          lowerTitle.includes(`surah ${surah.number}`) ||
+          lowerTitle.includes(`chapter ${surah.number}`)) {
+        return surah
+      }
+    }
+    
+    return { number: 0, name: 'Unknown Surah' }
+  }
+
+  // Helper function to remove duplicate videos
+  function removeDuplicateVideos(videos: any[]): any[] {
+    const seen = new Set()
+    return videos.filter(video => {
+      const id = video.video_id
+      if (seen.has(id)) {
+        return false
+      }
+      seen.add(id)
+      return true
+    })
+  }
+
+  // Helper function to parse view count
+  function parseViewCount(viewText: string): number {
+    if (!viewText) return 0
+    
+    const cleanText = viewText.replace(/[^\d.,KMB]/g, '')
+    const number = parseFloat(cleanText.replace(',', '.'))
+    
+    if (cleanText.includes('B')) return Math.floor(number * 1000000000)
+    if (cleanText.includes('M')) return Math.floor(number * 1000000)
+    if (cleanText.includes('K')) return Math.floor(number * 1000)
+    
+    return Math.floor(number) || 0
+  }
+
+  // Helper function to calculate popularity score (inspired by Chinese sources)
+  function calculatePopularityScore(video: any, category: string): number {
+    const views = parseViewCount(video.view_count?.text || '0')
+    const uploadDate = new Date(video.published?.text || video.published)
+    const daysSinceUpload = (Date.now() - uploadDate.getTime()) / (1000 * 60 * 60 * 24)
+    
+    // Base score from views
+    let score = views
+    
+    // Recency boost (similar to KW "hot" sorting)
+    if (daysSinceUpload < 1) score *= 3      // <24 hours
+    else if (daysSinceUpload < 7) score *= 2  // <7 days
+    else if (daysSinceUpload < 30) score *= 1.5 // <30 days
+    
+    // Category-specific adjustments (purely metric-based)
+    switch (category) {
+      case 'most_viewed':
+        // Pure view count - no recency boost
+        score = views
+        break
+      case 'recent_uploads':
+        // Only include videos from the last 30 days, heavily penalize older content
+        if (daysSinceUpload > 30) score = 0  // Completely exclude videos older than 30 days
+        else if (daysSinceUpload > 7) score *= 0.1  // Heavily penalize videos older than 1 week
+        else if (daysSinceUpload > 3) score *= 0.3  // Penalize videos older than 3 days
+        else if (daysSinceUpload > 1) score *= 0.7  // Slight penalty for videos older than 1 day
+        break
+      case 'live_recitations':
+        // Check if actually live by upload time (very recent) and high engagement
+        const isRecentLive = daysSinceUpload < 0.1 // Less than 2.4 hours
+        const hasHighEngagement = views > 1000 && daysSinceUpload < 1
+        if (isRecentLive || hasHighEngagement) score *= 2
+        break
+      case 'trending_now':
+        // Combination of recency and engagement
+        const trendingScore = views * (1 + (1 / Math.max(daysSinceUpload, 0.1)))
+        score = trendingScore
+        break
+      case 'viral':
+        // High engagement rate - views per day
+        const engagementRate = views / Math.max(daysSinceUpload, 1)
+        score = engagementRate * 1000
+        
+        // Additional viral indicators
+        if (daysSinceUpload < 3) score *= 1.5  // Very recent content
+        if (views > 100000 && daysSinceUpload < 7) score *= 1.3  // High views in short time
+        if (views > 10000 && daysSinceUpload < 1) score *= 2  // Very high daily rate
+        break
+      case 'top_reciters':
+        // For reciter searches, prioritize by view count and recency
+        score = views * (1 + (1 / Math.max(daysSinceUpload, 1)))
+        break
+      case 'popular_surahs':
+        // For surah searches, prioritize by view count and recency
+        score = views * (1 + (1 / Math.max(daysSinceUpload, 1)))
+        break
+      case 'by_style':
+        // For style searches, prioritize by view count and recency
+        score = views * (1 + (1 / Math.max(daysSinceUpload, 1)))
+        break
+    }
+    
+    return Math.floor(score)
+  }
 }
