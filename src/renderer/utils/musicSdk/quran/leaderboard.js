@@ -7,6 +7,27 @@ export default {
   page: 0,
   allPage: 1,
 
+  // Get fallback image for reciters when Quran.com doesn't provide images
+  getReciterFallbackImage(reciterName) {
+    if (!reciterName) return 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center'
+
+    // Map popular reciters to specific images
+    const reciterImages = {
+      'Yasser Ad Dussary': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Abu Bakr al-Shatri': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Sa\'ud ash-Shuraim': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Mishari Rashid al-`Afasy': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'AbdulBaset AbdulSamad': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Hani ar-Rifai': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Khalifah Al Tunaiji': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Mohamed Siddiq al-Minshawi': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Abdur-Rahman as-Sudais': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+      'Mahmoud Khalil Al-Husary': 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center',
+    }
+
+    return reciterImages[reciterName] || 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=400&h=300&fit=crop&crop=center'
+  },
+
   // Get popular/famous reciters (acts as a leaderboard)
   getPopularReciters(locale = 'en') {
     const requestObj = httpFetch(`https://api.qurancdn.com/api/qdc/audio/reciters?locale=${locale}&fields=profile_picture,cover_image,bio`)
@@ -37,7 +58,7 @@ export default {
       albumId: `reciter_${reciter.id}`,
       interval: '0:00',
       albumName: `${reciter.style?.name || 'Recitation'} - ${reciter.qirat?.name || 'Hafs'}`,
-      img: reciter.profilePicture || reciter.coverImage,
+      img: reciter.profilePicture || reciter.coverImage || this.getReciterFallbackImage(reciter.name),
       lrc: null,
       types: [
         { type: 'mp3', size: '0MB' },

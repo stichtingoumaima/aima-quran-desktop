@@ -43,6 +43,7 @@ export default {
         query: enhancedQuery,
         page,
         limit,
+        searchType: 'video',
       })
 
       if (!response.success) {
@@ -122,7 +123,7 @@ export default {
   // Transform YouTube video to music SDK format
   transformVideoToSong(video) {
     // Handle new API format (v15.1.1)
-    const title = video.title?.text || video.title || 'Unknown Title'
+    const title = video.title?.text || video.title || 'Quran Recitation'
     const reciter = extractReciterFromTitle(title)
     const surah = extractSurahFromTitle(title)
 
@@ -142,14 +143,18 @@ export default {
       duration = video.duration.seconds
     }
 
+    // Better fallbacks for missing data
+    const channelName = video.author?.name || 'Quran Channel'
+    const reciterName = reciter !== 'Unknown Reciter' ? reciter : channelName
+
     return {
       name: title,
-      singer: reciter,
+      singer: reciterName,
       source: 'youtube',
       songmid: `yt_${video.video_id || video.id}`,
       albumId: `yt_channel_${video.author?.id || 'unknown'}`,
       interval: formatDuration(duration),
-      albumName: video.author?.name || 'YouTube Channel',
+      albumName: channelName,
       img: video.thumbnails?.[0]?.url || '',
       lrc: null,
       types: [
@@ -162,13 +167,13 @@ export default {
       // YouTube-specific data
       youtubeId: video.video_id || video.id,
       youtubeUrl: `https://www.youtube.com/watch?v=${video.video_id || video.id}`,
-      channelName: video.author?.name,
+      channelName,
       channelId: video.author?.id,
       views: video.view_count?.text || video.view_count,
       uploadDate: video.published?.text || video.published,
       duration,
       // Quran-specific data
-      reciterName: reciter,
+      reciterName,
       surahNumber: surah.number,
       surahName: surah.name,
       isQuranRecitation: true,

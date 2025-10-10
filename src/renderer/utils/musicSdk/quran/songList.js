@@ -239,7 +239,53 @@ export default {
 
   // Add missing methods required by the interface
   getTags() {
-    return Promise.resolve([])
+    console.log('📋 Quran getTags called')
+
+    // Define categories for Quran recitations
+    const tags = [
+      {
+        name: 'Recitation Styles',
+        list: [
+          { parent_id: 'style', parent_name: 'Recitation Styles', id: 'hafs', name: 'Hafs Recitation', source: 'quran' },
+          { parent_id: 'style', parent_name: 'Recitation Styles', id: 'warsh', name: 'Warsh Recitation', source: 'quran' },
+          { parent_id: 'style', parent_name: 'Recitation Styles', id: 'qaloon', name: 'Qaloon Recitation', source: 'quran' },
+          { parent_id: 'style', parent_name: 'Recitation Styles', id: 'al-bazzi', name: 'Al-Bazzi Recitation', source: 'quran' },
+        ],
+      },
+      {
+        name: 'Popular Reciters',
+        list: [
+          { parent_id: 'reciter', parent_name: 'Popular Reciters', id: 'sudais', name: 'Abdur-Rahman as-Sudais', source: 'quran' },
+          { parent_id: 'reciter', parent_name: 'Popular Reciters', id: 'shuraim', name: 'Sa\'ud ash-Shuraim', source: 'quran' },
+          { parent_id: 'reciter', parent_name: 'Popular Reciters', id: 'alafasy', name: 'Mishari Rashid al-`Afasy', source: 'quran' },
+          { parent_id: 'reciter', parent_name: 'Popular Reciters', id: 'husary', name: 'Mahmoud Khalil Al-Husary', source: 'quran' },
+        ],
+      },
+    ]
+
+    const hotTag = [
+      { id: 'hafs', name: 'Hafs Recitation', source: 'quran' },
+      { id: 'sudais', name: 'Abdur-Rahman as-Sudais', source: 'quran' },
+      { id: 'alafasy', name: 'Mishari Rashid al-`Afasy', source: 'quran' },
+    ]
+
+    const result = {
+      tags,
+      hotTag,
+      source: 'quran',
+    }
+
+    console.log('📋 Quran getTags returning:', result)
+    console.log('📋 hotTag type:', typeof result.hotTag, 'isArray:', Array.isArray(result.hotTag))
+    console.log('📋 hotTag content:', result.hotTag)
+
+    // Ensure hotTag is always an array
+    if (!Array.isArray(result.hotTag)) {
+      console.error('❌ hotTag is not an array!', result.hotTag)
+      result.hotTag = []
+    }
+
+    return Promise.resolve(result)
   },
 
   getList() {

@@ -12,6 +12,8 @@ export const sortList = markRaw<Partial<Record<LX.OnlineSource, SortInfo[]>>>({}
 for (const source of music.sources) {
   const songList = music[source.id as LX.OnlineSource]?.songList
   if (!songList) continue
+  // Exclude Quran.com from playlist sources since it's for reciters, not playlists
+  if (source.id === 'quran') continue
   sources.push(source.id as LX.OnlineSource)
   sortList[source.id as LX.OnlineSource] = songList.sortList as SortInfo[]
 }

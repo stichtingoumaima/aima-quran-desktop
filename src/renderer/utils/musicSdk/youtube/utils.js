@@ -27,7 +27,7 @@ export const formatDuration = (seconds) => {
  * @returns {string} Extracted reciter name
  */
 export const extractReciterFromTitle = (title) => {
-  if (!title) return 'Unknown Reciter'
+  if (!title) return 'Quran Reciter'
 
   // Common patterns for Quran recitation titles
   const patterns = [
@@ -35,17 +35,40 @@ export const extractReciterFromTitle = (title) => {
     /([^-\n]+)\s+(?:recitation|recites|quran)/i,
     /surah\s+[^-\n]+\s*-\s*([^-\n]+)/i,
     /([^-\n]+)\s*-\s*surah/i,
+    /([^-\n]+)\s*-\s*quran/i,
+    /quran\s*-\s*([^-\n]+)/i,
   ]
 
   for (const pattern of patterns) {
     const match = title.match(pattern)
     if (match && match[1]) {
-      return match[1].trim()
+      const extracted = match[1].trim()
+      // Clean up common words that aren't reciter names
+      const cleaned = extracted.replace(/\b(recitation|recites|quran|surah|chapter|beautiful|amazing|emotional|melodic)\b/gi, '').trim()
+      if (cleaned && cleaned.length > 2) {
+        return cleaned
+      }
     }
   }
 
-  // Fallback: try to extract from channel name or return first part
-  return title && typeof title === 'string' ? title.split('-')[0]?.trim() || 'Unknown Reciter' : 'Unknown Reciter'
+  // Fallback: try to extract from title parts
+  if (typeof title === 'string') {
+    const parts = title.split(/[-|–—]/)
+    if (parts.length > 1) {
+      // Try the second part (often contains reciter name)
+      const secondPart = parts[1]?.trim()
+      if (secondPart && secondPart.length > 2) {
+        return secondPart
+      }
+    }
+    // Try the first part
+    const firstPart = parts[0]?.trim()
+    if (firstPart && firstPart.length > 2) {
+      return firstPart
+    }
+  }
+
+  return 'Quran Reciter'
 }
 
 /**
@@ -166,4 +189,61 @@ export const cleanSearchText = (text) => {
     .replace(/[^\w\s]/g, ' ') // Remove special characters
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim()
+}
+
+/**
+ * Parses YouTube's human-readable date strings (e.g., "2 weeks ago", "1 year ago").
+ * @param {string | null | undefined} dateString - The date string to parse.
+ * @returns {string | null} - The date in ISO 8601 format, or the original string if parsing fails.
+ */
+export const parseReadableDate = (dateString) => {
+  if (!dateString || typeof dateString !== 'string') {
+    return null
+  }
+
+  const now = new Date()
+  const lowerCaseDateString = dateString.toLowerCase()
+
+  // Match expressions like "5 hours ago", "1 day ago", "2 weeks ago", etc.
+  const timeAgoMatch = lowerCaseDateString.match(/(\d+)\s+(hour|day|week|month|year)s?\s+ago/)
+
+  if (timeAgoMatch) {
+    const value = parseInt(timeAgoMatch[1], 10)
+    const unit = timeAgoMatch[2]
+
+    switch (unit) {
+      case 'hour':
+        now.setHours(now.getHours() - value)
+        break
+      case 'day':
+        now.setDate(now.getDate() - value)
+        break
+      case 'week':
+        now.setDate(now.getDate() - value * 7)
+        break
+      case 'month':
+        now.setMonth(now.getMonth() - value)
+        break
+      case 'year':
+        now.setFullYear(now.getFullYear() - value)
+        break
+      default:
+        // If unit is not recognized, return the current date
+        return now.toISOString()
+    }
+    return now.toISOString()
+  }
+
+  // Fallback for other potential date formats (e.g., "Premiered Jan 5, 2024")
+  try {
+    const parsedDate = new Date(dateString)
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.toISOString()
+    }
+  } catch (e) {
+    // Ignore parsing errors and return the original string
+  }
+
+  // If no match and not a valid date string, return the original as a fallback
+  return dateString
 }
