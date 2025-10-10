@@ -20,8 +20,6 @@ export default {
   },
 
   async getList(id, page = 1, limit = 30) {
-    console.log('🏆 Fetching leaderboard:', { id, page, limit })
-
     try {
       const category = id.replace('youtube__', '')
       const params = this.getParamsForCategory(category)

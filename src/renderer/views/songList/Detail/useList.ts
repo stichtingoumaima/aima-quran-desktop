@@ -9,6 +9,7 @@ export default () => {
   const listRef = ref<any>(null)
 
   const getListData = async(source: LX.OnlineSource, id: string, page: number, refresh: boolean) => {
+    console.log('📖 Detail getListData called:', { source, id, page, refresh })
     await getAndSetListDetail(id, source, page, refresh).then(() => {
       setTimeout(() => {
         if (listRef.value) listRef.value.scrollToTop()

@@ -185,6 +185,7 @@ export const getListDetailAll = async(id: string, source: LX.OnlineSource, isRef
  * @returns
  */
 export const getAndSetListDetail = async(id: string, source: LX.OnlineSource, page: number, isRefresh = false) => {
+  console.log('📋 Store getAndSetListDetail called:', { id, source, page, isRefresh })
   let key = `sdetail__${source}__${id}__${page}`
 
   if (!isRefresh && listDetailInfo.key == key && listDetailInfo.list.length) return
@@ -193,12 +194,13 @@ export const getAndSetListDetail = async(id: string, source: LX.OnlineSource, pa
   listDetailInfo.noItemLabel = window.i18n.t('list__loading')
 
   return getListDetail(id, source, page, isRefresh).then((result: ListDetailInfo) => {
+    console.log('📋 Store getListDetail result:', result)
     if (key != listDetailInfo.key) return
     setListDetail(result, id, page)
   }).catch((error: any) => {
     clearListDetail()
     listDetailInfo.noItemLabel = window.i18n.t('list__load_failed')
-    console.log(error)
+    console.log('❌ Store getListDetail error:', error)
     throw error
   })
 }

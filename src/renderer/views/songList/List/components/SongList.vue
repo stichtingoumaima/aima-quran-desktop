@@ -59,6 +59,13 @@ const togglePage = (page: number) => {
 }
 
 const toDetail = (info: ListInfoItem) => {
+  console.log('🖱️ Playlist clicked:', info)
+  console.log('🖱️ Navigating to detail with:', {
+    source: info.source,
+    id: info.id,
+    picUrl: info.img,
+    fromName: route.name as string,
+  })
   void router.push({
     path: '/songList/detail',
     query: {

@@ -58,7 +58,7 @@ export const extractSurahFromTitle = (title) => {
 
   // Pattern to match surah numbers (1-114)
   const numberMatch = title.match(/(?:surah|chapter)\s*(\d{1,3})/i)
-  const surahNumber = numberMatch ? parseInt(numberMatch[1]) : null
+  const surahNumber = numberMatch ? parseInt(numberMatch[1], 10) : null
 
   // Pattern to match surah names
   const nameMatch = title.match(/(?:surah|chapter)\s*(?:(\d{1,3})\s*)?([a-zA-Z\s]+?)(?:\s*-\s*|$)/i)
@@ -166,4 +166,62 @@ export const cleanSearchText = (text) => {
     .replace(/[^\w\s]/g, ' ') // Remove special characters
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim()
+}
+
+/**
+ * NEW FUNCTION TO FIX DATE ERRORS
+ * Parses YouTube's human-readable date strings (e.g., "2 weeks ago", "1 year ago").
+ * @param {string | null | undefined} dateString - The date string to parse.
+ * @returns {string | null} - The date in ISO 8601 format, or the original string if parsing fails.
+ */
+export const parseReadableDate = (dateString) => {
+  if (!dateString || typeof dateString !== 'string') {
+    return null
+  }
+
+  const now = new Date()
+  const lowerCaseDateString = dateString.toLowerCase()
+
+  // Match expressions like "5 hours ago", "1 day ago", "2 weeks ago", etc.
+  const timeAgoMatch = lowerCaseDateString.match(/(\d+)\s+(hour|day|week|month|year)s?\s+ago/)
+
+  if (timeAgoMatch) {
+    const value = parseInt(timeAgoMatch[1], 10)
+    const unit = timeAgoMatch[2]
+
+    switch (unit) {
+      case 'hour':
+        now.setHours(now.getHours() - value)
+        break
+      case 'day':
+        now.setDate(now.getDate() - value)
+        break
+      case 'week':
+        now.setDate(now.getDate() - value * 7)
+        break
+      case 'month':
+        now.setMonth(now.getMonth() - value)
+        break
+      case 'year':
+        now.setFullYear(now.getFullYear() - value)
+        break
+      default:
+        // If unit is not recognized, return the current date
+        return now.toISOString()
+    }
+    return now.toISOString()
+  }
+
+  // Fallback for other potential date formats (e.g., "Premiered Jan 5, 2024")
+  try {
+    const parsedDate = new Date(dateString)
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.toISOString()
+    }
+  } catch (e) {
+    // Ignore parsing errors and return the original string
+  }
+
+  // If no match and not a valid date string, return the original as a fallback
+  return dateString
 }
