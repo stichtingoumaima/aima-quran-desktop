@@ -137,7 +137,6 @@ const modules = {
     youtube_search: 'youtube_search',
     youtube_get_stream: 'youtube_get_stream',
     youtube_get_playlist: 'youtube_get_playlist',
-    youtube_get_trending: 'youtube_get_trending',
 
     open_api_action: 'open_api_action',
     sync_action: 'sync_action',

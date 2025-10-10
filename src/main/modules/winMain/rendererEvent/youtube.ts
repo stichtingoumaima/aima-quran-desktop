@@ -287,20 +287,20 @@ export const setupYouTubeHandlers = () => {
       // Try multiple search approaches
       let searchResponse
       try {
-        // Method 1: Search for playlists specifically
-        searchResponse = await yt.search(query, { type: 'playlist' })
-        console.log('✅ Playlist search succeeded')
+        // Method 1: Direct search
+        searchResponse = await yt.search(query)
+        console.log('✅ Direct search succeeded')
       } catch (error1) {
-        console.log('⚠️ Playlist search failed, trying mixed search:', (error1 as Error).message)
+        console.log('⚠️ Direct search failed, trying filtered search:', (error1 as Error).message)
         try {
-          // Method 2: Mixed search (videos and playlists)
-          searchResponse = await yt.search(query)
-          console.log('✅ Mixed search succeeded')
-        } catch (error2) {
-          console.log('⚠️ Mixed search failed, trying video search:', (error2 as Error).message)
-          // Method 3: Video search as fallback
+          // Method 2: Filtered search by type
           searchResponse = await yt.search(query, { type: 'video' })
-          console.log('✅ Video search succeeded')
+          console.log('✅ Filtered search succeeded')
+        } catch (error2) {
+          console.log('⚠️ Filtered search failed, trying basic search:', (error2 as Error).message)
+          // Method 3: Basic search with sort
+          searchResponse = await yt.search(query, { sort_by: 'relevance' })
+          console.log('✅ Basic search succeeded')
         }
       }
 
@@ -310,139 +310,40 @@ export const setupYouTubeHandlers = () => {
 
       console.log('📹 Raw search response keys:', Object.keys(searchResponse))
       console.log('📹 Results array length:', searchResponse.results?.length || 0)
-      console.log('📹 First few results:', searchResponse.results?.slice(0, 3))
-      console.log('📹 Result types:', searchResponse.results?.map((item: any) => item.type))
 
-      // Extract videos and playlists from results
-      const rawVideos = searchResponse.results?.filter((item: any) => 
-        item.type === 'Video' || item.content_type === 'VIDEO'
-      ) || []
-      const rawPlaylists = searchResponse.results?.filter((item: any) => 
-        item.type === 'Playlist' || item.content_type === 'PLAYLIST'
-      ) || []
+      // Extract videos from results
+      const rawVideos = searchResponse.results?.filter((item: any) => item.type === 'Video') || []
       console.log('📹 Extracted videos:', rawVideos.length)
-      console.log('📚 Extracted playlists:', rawPlaylists.length)
-      console.log('📚 First playlist:', rawPlaylists[0])
-      console.log('🖼️ First playlist thumbnail data:', rawPlaylists[0]?.content_image?.primary_thumbnail)
 
       // Serialize video data to plain objects to avoid IPC cloning issues
-      const videos = rawVideos.map((video: any) => {
-        // Safely extract text content
-        const getTextContent = (obj: any) => {
-          if (typeof obj === 'string') return obj
-          if (obj?.text) return obj.text
-          if (obj?.runs?.[0]?.text) return obj.runs[0].text
-          return 'Unknown'
-        }
-
-        // Safely extract thumbnail URL
-        const getThumbnailUrl = (obj: any) => {
-          if (typeof obj === 'string') return obj
-          if (obj?.url) return obj.url
-          if (Array.isArray(obj) && obj[0]?.url) return obj[0].url
-          return 'https://i.ytimg.com/vi/example/maxresdefault.jpg'
-        }
-
-        return {
-          id: String(video.id || video.video_id || 'unknown'),
-          video_id: String(video.video_id || video.id || 'unknown'),
-          title: getTextContent(video.title),
+      const videos = rawVideos.map((video: any) => ({
+        id: video.id || video.video_id,
+        video_id: video.video_id || video.id,
+        title: video.title?.text || video.title || 'Unknown Title',
         author: {
-            name: getTextContent(video.author),
-            id: String(video.author?.id || video.author?.channel_id || 'unknown_channel')
+          name: video.author?.name || video.author?.text || 'Unknown Author',
+          id: video.author?.id || video.author?.channel_id || 'unknown_channel'
         },
         duration: {
-            seconds: Number(video.duration?.seconds || 0)
+          seconds: video.duration?.seconds || 0
         },
         length_text: {
-            text: getTextContent(video.length_text || video.duration) || '0:00'
+          text: video.length_text?.text || video.duration?.text || '0:00'
         },
         view_count: {
-            text: getTextContent(video.view_count) || '0'
+          text: video.view_count?.text || video.view_count || '0'
         },
         published: {
-            text: getTextContent(video.published) || 'Unknown Date'
-          },
-          thumbnails: [{
-            url: getThumbnailUrl(video.thumbnails)
-          }]
-        }
-      })
-
-      // Serialize playlist data to plain objects to avoid IPC cloning issues
-      const playlists = rawPlaylists.map((playlist: any) => {
-        // Safely extract text content
-        const getTextContent = (obj: any) => {
-          if (typeof obj === 'string') return obj
-          if (obj?.text) return obj.text
-          if (obj?.runs?.[0]?.text) return obj.runs[0].text
-          return 'Unknown'
-        }
-
-        // Safely extract thumbnail URL for playlists
-        const getPlaylistThumbnailUrl = (obj: any) => {
-          console.log('🔍 Extracting thumbnail from:', obj)
-          
-          if (typeof obj === 'string') return obj
-          if (obj?.url) return obj.url
-          if (Array.isArray(obj) && obj[0]?.url) return obj[0].url
-          if (obj?.thumbnails && Array.isArray(obj.thumbnails) && obj.thumbnails[0]?.url) return obj.thumbnails[0].url
-          if (obj?.primary_thumbnail && Array.isArray(obj.primary_thumbnail) && obj.primary_thumbnail[0]?.url) return obj.primary_thumbnail[0].url
-          
-          // Try to find any URL in the object recursively
-          const findUrl = (item: any): string | null => {
-            if (typeof item === 'string' && item.includes('http')) return item
-            if (item?.url && typeof item.url === 'string') return item.url
-            if (Array.isArray(item)) {
-              for (const subItem of item) {
-                const found = findUrl(subItem)
-                if (found) return found
-              }
-            }
-            if (typeof item === 'object' && item !== null) {
-              for (const key in item) {
-                const found = findUrl(item[key])
-                if (found) return found
-              }
-            }
-            return null
-          }
-          
-          const foundUrl = findUrl(obj)
-          if (foundUrl) return foundUrl
-          
-          return 'https://i.ytimg.com/vi/example/maxresdefault.jpg'
-        }
-
-        return {
-          id: String(playlist.content_id || playlist.id || playlist.playlist_id || 'unknown'),
-          playlist_id: String(playlist.content_id || playlist.playlist_id || playlist.id || 'unknown'),
-          title: getTextContent(playlist.metadata?.title || playlist.title),
-          author: {
-            name: getTextContent(playlist.metadata?.metadata || playlist.author),
-            id: String(playlist.author?.id || playlist.author?.channel_id || 'unknown_channel')
-          },
-          video_count: {
-            text: getTextContent(playlist.metadata?.metadata || playlist.video_count) || '0'
-          },
-          thumbnails: [{
-            url: getPlaylistThumbnailUrl(playlist.content_image?.primary_thumbnail || playlist.thumbnails)
-          }]
-        }
-      })
-
-      console.log('📤 Returning search results:', {
-        videosCount: videos.length,
-        playlistsCount: playlists.length,
-        total: videos.length + playlists.length
-      })
+          text: video.published?.text || video.published || 'Unknown Date'
+        },
+        thumbnails: video.thumbnails || [{ url: 'https://i.ytimg.com/vi/example/maxresdefault.jpg' }]
+      }))
 
       return {
         success: true,
         data: {
           videos,
-          playlists,
-          total: videos.length + playlists.length,
+          total: videos.length,
           page,
           limit,
         },
@@ -622,297 +523,35 @@ export const setupYouTubeHandlers = () => {
     try {
       console.log('🔍 YouTube get playlist request in main process:', { playlistId })
       const yt = await getYouTubeClient()
-      console.log('✅ YouTube client obtained for playlist:', !!yt)
       
-      console.log('📡 Calling yt.getPlaylist with ID:', playlistId)
+      const playlist = await yt.getPlaylist(playlistId)
       
-      // Try different approaches to get the playlist
-      let playlist
-      try {
-        // Method 1: Direct playlist ID (most common)
-        playlist = await yt.getPlaylist(playlistId)
-        console.log('✅ Method 1 (direct ID) succeeded')
-      } catch (error1) {
-        console.log('⚠️ Method 1 failed:', (error1 as Error).message)
-        try {
-          // Method 2: Try with VL prefix (YouTube InnerTube format)
-          const vlPlaylistId = `VL${playlistId}`
-          console.log('📡 Trying with VL prefix:', vlPlaylistId)
-          playlist = await yt.getPlaylist(vlPlaylistId)
-          console.log('✅ Method 2 (VL prefix) succeeded')
-        } catch (error2) {
-          console.log('⚠️ Method 2 failed:', (error2 as Error).message)
-          try {
-            // Method 3: Try with full URL
-            const fullUrl = `https://www.youtube.com/playlist?list=${playlistId}`
-            console.log('📡 Trying with full URL:', fullUrl)
-            playlist = await yt.getPlaylist(fullUrl)
-            console.log('✅ Method 3 (full URL) succeeded')
-          } catch (error3) {
-            console.log('⚠️ Method 3 failed:', (error3 as Error).message)
-            try {
-              // Method 4: Try with PL prefix (in case it's missing)
-              const plPlaylistId = playlistId.startsWith('PL') ? playlistId : `PL${playlistId}`
-              console.log('📡 Trying with PL prefix:', plPlaylistId)
-              playlist = await yt.getPlaylist(plPlaylistId)
-              console.log('✅ Method 4 (PL prefix) succeeded')
-            } catch (error4) {
-              console.log('⚠️ Method 4 failed:', (error4 as Error).message)
-              throw error1 // Throw the original error
-            }
-          }
-        }
-      }
-      
-      console.log('📚 Raw playlist response:', playlist)
-      console.log('📚 Playlist structure debug:', {
-        hasVideos: !!playlist.videos,
-        hasContents: !!playlist.contents,
-        videosLength: playlist.videos?.length || 0,
-        contentsLength: playlist.contents?.length || 0,
-        firstVideo: playlist.videos?.[0] || playlist.contents?.[0],
-        firstVideoKeys: playlist.videos?.[0] ? Object.keys(playlist.videos[0]) : playlist.contents?.[0] ? Object.keys(playlist.contents[0]) : []
-      })
-      
-      // Debug the first video's data structure in detail
-      const firstItem = playlist.videos?.[0] || playlist.contents?.[0]
-      if (firstItem) {
-        console.log('🔍 First video item structure:', {
-          keys: Object.keys(firstItem),
-          hasPlaylistVideoRenderer: !!firstItem.playlist_video_renderer,
-          playlistVideoRendererKeys: firstItem.playlist_video_renderer ? Object.keys(firstItem.playlist_video_renderer) : [],
-          videoInfo: firstItem.playlist_video_renderer?.video_info,
-          viewCount: firstItem.playlist_video_renderer?.view_count,
-          published: firstItem.playlist_video_renderer?.published,
-          lengthText: firstItem.playlist_video_renderer?.length_text
-        })
-        
-        // Log the full first item to see all available data
-        console.log('🔍 Full first item from YouTube API:', JSON.stringify(firstItem, null, 2))
-      }
-      
-      // Check for both possible data structures
-      const hasContents = playlist?.contents && playlist.contents.length > 0
-      const hasVideos = playlist?.videos && playlist.videos.length > 0
-      
-      if (!playlist || (!hasContents && !hasVideos)) {
-        console.log('❌ No playlist contents returned:', { 
-          playlist, 
-          hasContents, 
-          hasVideos,
-          contentsLength: playlist?.contents?.length || 0,
-          videosLength: playlist?.videos?.length || 0
-        })
+      if (!playlist || !playlist.contents) {
         throw new Error('No playlist contents returned')
       }
 
       console.log('📚 YouTube playlist retrieved:', {
         id: playlist.id,
-        title: playlist.title?.text || playlist.header?.title?.text,
-        videoCount: playlist.videos?.length || playlist.contents?.length || 0,
-        hasVideos: !!playlist.videos,
-        hasContents: !!playlist.contents
+        title: playlist.header?.title?.text,
+        videoCount: playlist.contents?.length || 0
       })
 
       // Serialize playlist data to avoid IPC cloning issues
       const serializedPlaylist = {
         id: playlist.id || playlistId,
         header: {
-          title: { text: playlist.title?.text || playlist.header?.title?.text || 'Unknown Playlist' },
-          subtitle: { text: playlist.author?.name || playlist.header?.subtitle?.text || 'Unknown Channel' }
+          title: { text: playlist.header?.title?.text || 'Unknown Playlist' },
+          subtitle: { text: playlist.header?.subtitle?.text || 'Unknown Channel' }
         },
-        contents: await Promise.all((playlist.videos || playlist.contents || []).map(async (item: any) => {
-        // Handle both video format and playlist_video_renderer format
-          const video = item.video_id ? item : item.playlist_video_renderer
-          const videoId = video?.video_id || video?.id || item?.video_id || item?.id
-          
-          // Enhanced title extraction with more fallbacks
-          const getTitle = (video: any) => {
-            if (video?.title?.text) return video.title.text
-            if (video?.title?.runs?.[0]?.text) return video.title.runs[0].text
-            if (video?.title) return video.title
-            if (item?.title?.text) return item.title.text
-            if (item?.title?.runs?.[0]?.text) return item.title.runs[0].text
-            if (item?.title) return item.title
-            return 'Unknown Title'
-          }
-          
-          // Enhanced author extraction
-          const getAuthor = (video: any) => {
-            if (video?.author?.name) return video.author.name
-            if (video?.short_byline_text?.runs?.[0]?.text) return video.short_byline_text.runs[0].text
-            if (video?.short_byline_text?.text) return video.short_byline_text.text
-            if (item?.author?.name) return item.author.name
-            if (item?.short_byline_text?.runs?.[0]?.text) return item.short_byline_text.runs[0].text
-            return 'Unknown Author'
-          }
-          
-          // Enhanced duration extraction
-          const getDuration = (video: any) => {
-            if (video?.length_seconds) return video.length_seconds
-            if (video?.duration?.seconds) return video.duration.seconds
-            if (video?.length_text?.text) {
-              // Parse duration from text like "3:45" or "1:23:45"
-              const timeMatch = video.length_text.text.match(/(\d+):(\d+)(?::(\d+))?/)
-              if (timeMatch) {
-                const hours = timeMatch[3] ? parseInt(timeMatch[1]) : 0
-                const minutes = timeMatch[3] ? parseInt(timeMatch[2]) : parseInt(timeMatch[1])
-                const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : parseInt(timeMatch[2])
-                return hours * 3600 + minutes * 60 + seconds
-              }
-            }
-            if (item?.length_seconds) return item.length_seconds
-            if (item?.duration?.seconds) return item.duration.seconds
-            return 0
-          }
-          
-          // Enhanced views extraction with fallback to getDetails
-          const getViews = async (video: any) => {
-            // First try to get from playlist data
-            if (video?.view_count?.text && video.view_count.text !== '0 views') {
-              return video.view_count.text
-            }
-            if (video?.view_count && video.view_count !== '0 views') {
-              return video.view_count
-            }
-            if (video?.video_info?.runs?.[0]?.text) {
-              return video.video_info.runs[0].text
-            }
-            if (item?.view_count?.text && item.view_count.text !== '0 views') {
-              return item.view_count.text
-            }
-            if (item?.view_count && item.view_count !== '0 views') {
-              return item.view_count
-            }
-            
-            // Fallback: get details from individual video
-            if (videoId && videoId !== 'unknown') {
-              try {
-                // Try different methods to get video details
-                let details = null
-                if (typeof yt.getDetails === 'function') {
-                  details = await yt.getDetails(videoId)
-                } else if (typeof yt.getInfo === 'function') {
-                  details = await yt.getInfo(videoId)
-                } else if (typeof yt.getVideoInfo === 'function') {
-                  details = await yt.getVideoInfo(videoId)
-                } else {
-                  return '0 views'
-                }
-                
-                const viewCount = details.basic_info?.view_count || details.view_count || details.views
-                if (viewCount) {
-                  const formattedViews = `${viewCount.toLocaleString()} views`
-                  return formattedViews
-                }
-              } catch (error) {
-                // Silently fail and return default
-              }
-            }
-            
-            return '0 views'
-          }
-          
-          // Enhanced upload date extraction with fallback to getDetails
-          const getUploadDate = async (video: any) => {
-            // First try to get from playlist data
-            if (video?.published?.text && video.published.text !== 'Unknown date') {
-              return video.published.text
-            }
-            if (video?.published && video.published !== 'Unknown date') {
-              return video.published
-            }
-            
-            // Try to extract date from video_info.runs (this is where the date actually is!)
-            if (video?.video_info?.runs && video.video_info.runs.length >= 3) {
-              const dateText = video.video_info.runs[2]?.text // The third run is usually the date
-              if (dateText && dateText !== 'Unknown date') {
-                return dateText
-              }
-            }
-            
-            // Also try the second run (sometimes it's there)
-            if (video?.video_info?.runs?.[1]?.text) {
-              const dateText = video.video_info.runs[1].text
-              if (dateText && dateText !== 'Unknown date' && dateText.includes('ago')) {
-                return dateText
-              }
-            }
-            
-            if (item?.published?.text && item.published.text !== 'Unknown date') {
-              return item.published.text
-            }
-            if (item?.published && item.published !== 'Unknown date') {
-              return item.published
-            }
-            
-            // Fallback: get details from individual video
-            if (videoId && videoId !== 'unknown') {
-              try {
-                // Try different methods to get video details
-                let details = null
-                if (typeof yt.getDetails === 'function') {
-                  details = await yt.getDetails(videoId)
-                } else if (typeof yt.getInfo === 'function') {
-                  details = await yt.getInfo(videoId)
-                } else if (typeof yt.getVideoInfo === 'function') {
-                  details = await yt.getVideoInfo(videoId)
-                } else {
-                  return 'Unknown date'
-                }
-                
-                const uploadDate = details.basic_info?.upload_date || details.upload_date || details.published
-                if (uploadDate) {
-                  // Convert upload date to readable format
-                  const date = new Date(uploadDate)
-                  const now = new Date()
-                  const diffTime = Math.abs(now.getTime() - date.getTime())
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-                  let formattedDate
-                  if (diffDays === 1) formattedDate = '1 day ago'
-                  else if (diffDays < 7) formattedDate = `${diffDays} days ago`
-                  else if (diffDays < 30) formattedDate = `${Math.ceil(diffDays / 7)} weeks ago`
-                  else if (diffDays < 365) formattedDate = `${Math.ceil(diffDays / 30)} months ago`
-                  else formattedDate = `${Math.ceil(diffDays / 365)} years ago`
-
-                  return formattedDate
-                }
-              } catch (error) {
-                // Silently fail and return default
-              }
-            }
-            
-            return 'Unknown date'
-          }
-          
-          // Get views and upload date (with fallbacks)
-          const views = await getViews(video)
-          const uploadDate = await getUploadDate(video)
-          
-          return {
+        contents: playlist.contents?.map((item: any) => ({
           playlist_video_renderer: {
-              video_id: videoId,
-              title: { 
-                runs: [{ text: getTitle(video) }] 
-              },
-              short_byline_text: { 
-                runs: [{ text: getAuthor(video) }] 
-              },
-              length_seconds: getDuration(video),
-              // Copy the exact same structure as video search
-              view_count: {
-                text: views
-              },
-              published: {
-                text: uploadDate
-              },
-              thumbnail: { 
-                thumbnails: video?.thumbnails || video?.thumbnail?.thumbnails || item?.thumbnails || [{ url: 'https://i.ytimg.com/vi/example/maxresdefault.jpg' }] 
-              }
-            }
+            video_id: item.playlist_video_renderer?.video_id || 'unknown',
+            title: { runs: [{ text: item.playlist_video_renderer?.title?.runs?.[0]?.text || 'Unknown Title' }] },
+            short_byline_text: { runs: [{ text: item.playlist_video_renderer?.short_byline_text?.runs?.[0]?.text || 'Unknown Author' }] },
+            length_seconds: item.playlist_video_renderer?.length_seconds || 0,
+            thumbnail: { thumbnails: item.playlist_video_renderer?.thumbnail?.thumbnails || [{ url: 'https://i.ytimg.com/vi/example/maxresdefault.jpg' }] }
           }
-        }))
+        })) || []
       }
 
       return {
@@ -921,14 +560,9 @@ export const setupYouTubeHandlers = () => {
       }
     } catch (error) {
       console.error('❌ YouTube get playlist error:', error)
-      console.error('❌ Error details:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
-        name: (error as Error).name
-      })
       
       // Provide fallback mock playlist data
-      console.log('🔄 Providing fallback mock playlist data for playlistId:', playlistId)
+      console.log('🔄 Providing fallback mock playlist data')
       const mockPlaylist = {
         id: playlistId,
         header: {
