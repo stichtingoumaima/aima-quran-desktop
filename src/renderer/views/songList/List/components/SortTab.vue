@@ -1,9 +1,9 @@
 <template>
-  <base-tab :model-value="sortId" :class="$style.tab" :list="list" item-label="name" @change="handleToggle" />
+  <base-tab :model-value="sortId" :class="$style.tab" :list="translatedList" item-label="name" @change="handleToggle" />
 </template>
 
 <script setup>
-import { watch, shallowReactive } from '@common/utils/vueTools'
+import { watch, shallowReactive, computed } from '@common/utils/vueTools'
 import { sortList } from '@renderer/store/songList/state'
 import { useRouter, useRoute } from '@common/utils/vueRouter'
 
@@ -26,6 +26,13 @@ const router = useRouter()
 const route = useRoute()
 
 const list = shallowReactive([])
+
+const translatedList = computed(() => {
+  return list.map(item => ({
+    ...item,
+    name: window.i18n.t(item.name),
+  }))
+})
 
 
 const handleToggle = (id) => {

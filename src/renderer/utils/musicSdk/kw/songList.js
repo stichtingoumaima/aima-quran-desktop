@@ -12,11 +12,11 @@ export default {
   successCode: 200,
   sortList: [
     {
-      name: '最新',
+      name: 'sort__latest',
       id: 'new',
     },
     {
-      name: '最热',
+      name: 'sort__most_popular',
       id: 'hot',
     },
   ],

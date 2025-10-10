@@ -11,11 +11,11 @@ export default {
   successCode: 0,
   sortList: [
     {
-      name: '最热',
+      name: 'sort__most_popular',
       id: 5,
     },
     {
-      name: '最新',
+      name: 'sort__latest',
       id: 2,
     },
   ],

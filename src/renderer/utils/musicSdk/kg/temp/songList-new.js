@@ -17,23 +17,23 @@ export default {
   },
   sortList: [
     {
-      name: '推荐',
+      name: 'sort__recommended',
       id: '5',
     },
     {
-      name: '最热',
+      name: 'sort__most_popular',
       id: '6',
     },
     {
-      name: '最新',
+      name: 'sort__latest',
       id: '7',
     },
     {
-      name: '热藏',
+      name: 'sort__hot_collection',
       id: '3',
     },
     {
-      name: '飙升',
+      name: 'sort__rising',
       id: '8',
     },
   ],

@@ -16,12 +16,12 @@ export default {
   cachedUrl: {},
   sortList: [
     {
-      name: '推荐',
+      name: 'sort__recommended',
       id: '15127315',
       // id: '1',
     },
     {
-      name: '最新',
+      name: 'sort__latest',
       id: '15127272',
       // id: '2',
     },

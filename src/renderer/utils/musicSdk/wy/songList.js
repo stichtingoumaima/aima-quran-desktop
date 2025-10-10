@@ -20,11 +20,11 @@ export default {
   cookie: 'MUSIC_U=',
   sortList: [
     {
-      name: '最热',
+      name: 'sort__most_popular',
       id: 'hot',
     },
     // {
-    //   name: '最新',
+    //   name: 'sort__latest',
     //   id: 'new',
     // },
   ],
