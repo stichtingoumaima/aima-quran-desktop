@@ -12,29 +12,30 @@ import { supportQuality } from './api-source'
 
 const sources = {
   sources: [
+    // Hidden music sources - keeping code but not showing in UI
+    // {
+    //   name: '酷狗音乐',
+    //   id: 'kg',
+    // },
+    // {
+    //   name: 'QQ音乐',
+    //   id: 'tx',
+    // },
+    // {
+    //   name: '网易音乐',
+    //   id: 'wy',
+    // },
+    // {
+    //   name: '咪咕音乐',
+    //   id: 'mg',
+    // },
+    // {
+    //   name: '虾米音乐',
+    //   id: 'xm',
+    // },
     {
       name: '酷我音乐',
       id: 'kw',
-    },
-    {
-      name: '酷狗音乐',
-      id: 'kg',
-    },
-    {
-      name: 'QQ音乐',
-      id: 'tx',
-    },
-    {
-      name: '网易音乐',
-      id: 'wy',
-    },
-    {
-      name: '咪咕音乐',
-      id: 'mg',
-    },
-    {
-      name: '虾米音乐',
-      id: 'xm',
     },
     {
       name: 'Quran.com',
@@ -75,7 +76,7 @@ export default {
     const trimStr = str => typeof str == 'string' ? str.trim() : str
     const musicName = trimStr(name)
     const tasks = []
-    const excludeSource = ['xm']
+    const excludeSource = ['xm', 'kg', 'tx', 'wy', 'mg']
     for (const source of sources.sources) {
       if (!sources[source.id].musicSearch || source.id == s || excludeSource.includes(source.id)) continue
       tasks.push(sources[source.id].musicSearch.search(`${musicName} ${singer || ''}`.trim(), 1, limit).catch(_ => null))

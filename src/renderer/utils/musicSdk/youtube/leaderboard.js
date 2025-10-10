@@ -170,12 +170,12 @@ export default {
 
   // Add missing methods required by the interface
   getBoards() {
-    return this.getList('', 1, 30).then(data => ({
-      list: data.list.map(item => ({
-        id: item.meta.youtubeId,
-        name: item.name,
-        bangid: item.meta.rank,
-      })),
-    }))
+    return Promise.resolve({
+      list: [
+        { id: 'youtube__popular_playlists', name: 'Popular Playlists', bangid: 'popular_playlists' },
+        { id: 'youtube__trending_channels', name: 'Trending Channels', bangid: 'trending_channels' },
+        { id: 'youtube__top_reciters', name: 'Top Reciters', bangid: 'top_reciters' },
+      ],
+    })
   },
 }

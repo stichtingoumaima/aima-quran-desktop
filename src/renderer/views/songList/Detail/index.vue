@@ -51,7 +51,7 @@ import useList from './useList'
 import useKeyBack from './useKeyBack'
 
 
-const source = ref<LX.OnlineSource>('kw')
+const source = ref<LX.OnlineSource>('quran')
 const id = ref<string>('')
 const page = ref<number>(1)
 const picUrl = ref<string>('')

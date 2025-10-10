@@ -1,14 +1,14 @@
-<p align="center"><a href="https://github.com/lyswhut/lx-music-desktop"><img width="200" src="https://github.com/lyswhut/lx-music-desktop/blob/master/doc/images/icon.png" alt="lx-music logo"></a></p>
+<p align="center"><a href="https://github.com/ayma/aima-quran-desktop"><img width="200" src="https://github.com/ayma/aima-quran-desktop/blob/master/doc/images/icon.png" alt="aima logo"></a></p>
 
-<h1 align="center">LX Music 桌面版</h1>
+<h1 align="center">AIMA Quran Desktop</h1>
 
 <p align="center">
-  <a href="https://github.com/lyswhut/lx-music-desktop/releases"><img src="https://img.shields.io/github/release/lyswhut/lx-music-desktop" alt="Release version"></a>
-  <a href="https://github.com/lyswhut/lx-music-desktop/actions/workflows/release.yml"><img src="https://github.com/lyswhut/lx-music-desktop/workflows/Build/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/lyswhut/lx-music-desktop/actions/workflows/beta-pack.yml"><img src="https://github.com/lyswhut/lx-music-desktop/workflows/Build%20Beta/badge.svg" alt="Build status"></a>
+  <a href="https://github.com/ayma/aima-quran-desktop/releases"><img src="https://img.shields.io/github/release/ayma/aima-quran-desktop" alt="Release version"></a>
+  <a href="https://github.com/ayma/aima-quran-desktop/actions/workflows/release.yml"><img src="https://github.com/ayma/aima-quran-desktop/workflows/Build/badge.svg" alt="Build status"></a>
+  <a href="https://github.com/ayma/aima-quran-desktop/actions/workflows/beta-pack.yml"><img src="https://github.com/ayma/aima-quran-desktop/workflows/Build%20Beta/badge.svg" alt="Build status"></a>
   <a href="https://electronjs.org/releases/stable"><img src="https://img.shields.io/github/package-json/dependency-version/lyswhut/lx-music-desktop/dev/electron/master" alt="Electron version"></a>
   <!-- <a href="https://github.com/lyswhut/lx-music-desktop/releases"><img src="https://img.shields.io/github/downloads/lyswhut/lx-music-desktop/latest/total" alt="Downloads"></a> -->
-  <a href="https://github.com/lyswhut/lx-music-desktop/tree/dev"><img src="https://img.shields.io/github/package-json/v/lyswhut/lx-music-desktop/dev" alt="Dev branch version"></a>
+  <a href="https://github.com/ayma/aima-quran-desktop/tree/dev"><img src="https://img.shields.io/github/package-json/v/ayma/aima-quran-desktop/dev" alt="Dev branch version"></a>
   <!-- <a href="https://github.com/lyswhut/lx-music-desktop/blob/master/LICENSE"><img src="https://img.shields.io/github/license/lyswhut/lx-music-desktop" alt="License"></a> -->
 </p>
 
@@ -30,7 +30,7 @@
 [9]: https://img.shields.io/github/license/lyswhut/lx-music-desktop
 [10]: https://github.com/lyswhut/lx-music-desktop/blob/master/LICENSE -->
 
-<p align="center">一个基于 Electron & Vue 开发的音乐软件</p>
+<p align="center">A Quran desktop application built with Electron & Vue</p>
 
 ## 说明
 
@@ -45,25 +45,25 @@
 - macOS
 - Windows 7 及以上
 
-*移动版项目地址：https://github.com/lyswhut/lx-music-mobile*
+*Mobile version: https://github.com/ayma/aima-quran-mobile*
 
-软件变化请查看[更新日志](https://github.com/lyswhut/lx-music-desktop/blob/master/CHANGELOG.md)。
+For changes, see [Changelog](https://github.com/ayma/aima-quran-desktop/blob/master/CHANGELOG.md).
 
-软件下载请查看 [GitHub Releases](https://github.com/lyswhut/lx-music-desktop/releases)。
+Download from [GitHub Releases](https://github.com/ayma/aima-quran-desktop/releases).
 
-使用常见问题请参阅[桌面版常见问题](https://lyswhut.github.io/lx-music-doc/desktop/faq)。
+For common questions, see [FAQ](https://github.com/ayma/aima-quran-desktop/wiki/FAQ).
 
-目前本项目的原始发布地址只有 [**GitHub**](https://github.com/lyswhut/lx-music-desktop/releases)，其他渠道均为第三方转载发布，与本项目无关！
+The official release is only available on [**GitHub**](https://github.com/ayma/aima-quran-desktop/releases).
 
-为了提高使用门槛，本软件内的默认设置、UI 操作不以新手友好为目标，所以使用前建议先根据你的喜好浏览调整一遍软件设置，阅读一遍[音乐播放列表机制](https://lyswhut.github.io/lx-music-doc/desktop/faq/playlist)及[可用的鼠标、键盘快捷操作](https://lyswhut.github.io/lx-music-doc/desktop/faq/hotkey)。
+This application is designed for Quran recitation and study. Please explore the settings and features to customize your experience.
 
 ### Scheme URL 支持
 
-从 v1.17.0 起支持 Scheme URL，可以使用此功能在浏览器等场景下调用 LX Music，我们开发了一个[油猴脚本](https://github.com/lyswhut/lx-music-script#readme)配套使用。
+从 v1.17.0 起支持 Scheme URL，可以使用此功能在浏览器等场景下调用 AIMA，我们开发了一个[油猴脚本](https://github.com/ayma/aima-quran-script#readme)配套使用。
 
-脚本安装地址：[LX Music 辅助脚本](https://greasyfork.org/zh-CN/scripts/438148)。
+脚本安装地址：[AIMA 辅助脚本](https://greasyfork.org/zh-CN/scripts/438148)。
 
-若你想自己调用 LX Music，可以参考文档「[Scheme URL 支持](https://lyswhut.github.io/lx-music-doc/desktop/scheme-url)」部分。
+若你想自己调用 AIMA，可以参考文档「[Scheme URL 支持](https://github.com/ayma/aima-quran-desktop/wiki/scheme-url)」部分。
 
 ### 数据同步服务
 
@@ -111,7 +111,7 @@
 
 ---
 
-*词语约定：本协议中的“本项目”指 LX Music（洛雪音乐助手）桌面版项目；“使用者”指签署本协议的使用者；“官方音乐平台”指对本项目内置的包括酷我、酷狗、咪咕等音乐源的官方平台统称；“版权数据”指包括但不限于图像、音频、名字等在内的他人拥有所属版权的数据。*
+*词语约定：本协议中的"本项目"指 AIMA（古兰经桌面版）项目；"使用者"指签署本协议的使用者；"官方音乐平台"指对本项目内置的包括酷我、酷狗、咪咕等音乐源的官方平台统称；"版权数据"指包括但不限于图像、音频、名字等在内的他人拥有所属版权的数据。*
 
 ### 一、数据来源
 

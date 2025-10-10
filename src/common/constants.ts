@@ -49,12 +49,12 @@ export const DATA_KEYS = {
 
 export const DEFAULT_SETTING = {
   leaderboard: {
-    source: 'kw',
+    source: 'quran',
     boardId: 'kw__16',
   },
 
   songList: {
-    source: 'kw',
+    source: 'quran',
     sortId: 'new',
     tagId: '',
   },

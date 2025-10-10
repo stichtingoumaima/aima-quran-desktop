@@ -100,7 +100,13 @@ export default {
 
   // Add missing methods required by the interface
   getBoards() {
-    return Promise.resolve({ list: [] })
+    return Promise.resolve({
+      list: [
+        { id: 'quran__popular_reciters', name: 'Popular Reciters', bangid: 'popular_reciters' },
+        { id: 'quran__famous_reciters', name: 'Famous Reciters', bangid: 'famous_reciters' },
+        { id: 'quran__trending_reciters', name: 'Trending Reciters', bangid: 'trending_reciters' },
+      ],
+    })
   },
 
   getList() {

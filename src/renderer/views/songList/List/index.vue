@@ -24,7 +24,7 @@ import { sources, listInfo, isVisibleListDetail } from '@renderer/store/songList
 import { sourceNames } from '@renderer/store'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 
-const source = ref<LX.OnlineSource>('kw')
+const source = ref<LX.OnlineSource>('quran')
 const tagId = ref<string>('')
 const sortId = ref<string>('')
 const page = ref<number>(1)

@@ -8,13 +8,13 @@ const name = pkg.name
 
 const address = [
   [`https://raw.githubusercontent.com/${author}/${name}/master/publish/version.json`, 'direct'],
-  ['https://registry.npmjs.org/lx-music-desktop-version-info/latest', 'npm'],
+  ['https://registry.npmjs.org/aima-quran-desktop-version-info/latest', 'npm'],
   [`https://cdn.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
   [`https://fastly.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
   [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  ['https://registry.npmmirror.com/lx-music-desktop-version-info/latest', 'npm'],
-  ['https://gitee.com/lyswhut/lx-music-desktop-versions/raw/master/version.json', 'direct'],
-  ['http://cdn.stsky.cn/lx-music/desktop/version.json', 'direct'],
+  ['https://registry.npmmirror.com/aima-quran-desktop-version-info/latest', 'npm'],
+  ['https://gitee.com/ayma/aima-quran-desktop-versions/raw/master/version.json', 'direct'],
+  ['http://cdn.stsky.cn/aima-quran/desktop/version.json', 'direct'],
 ]
 
 const request = async(url, retryNum = 0) => {

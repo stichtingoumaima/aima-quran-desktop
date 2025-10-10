@@ -24,7 +24,7 @@ import BlankView from './components/BlankView.vue'
 import { computed, ref } from '@common/utils/vueTools'
 import { sourceNames } from '@renderer/store'
 
-const source = ref('kw')
+const source = ref('quran')
 const searchType = ref(null)
 const page = ref(1)
 

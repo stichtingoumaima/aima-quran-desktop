@@ -10,11 +10,11 @@ const afterPack = require('./build-after-pack')
 */
 const options = {
   appId: 'cn.toside.music.desktop',
-  productName: 'lx-music-desktop',
+  productName: 'aima-quran-desktop',
   beforePack,
   afterPack,
   protocols: {
-    name: 'lx-music-protocol',
+    name: 'aima-quran-protocol',
     schemes: [
       'lxmusic',
     ],
@@ -48,7 +48,7 @@ const options = {
     {
       provider: 'github',
       owner: 'lyswhut',
-      repo: 'lx-music-desktop',
+      repo: 'aima-quran-desktop',
     },
   ],
 }
@@ -68,7 +68,7 @@ const winOptions = {
     allowToChangeInstallationDirectory: true,
     // differentialPackage: true,
     license: './licenses/license.rtf',
-    shortcutName: 'LX Music',
+    shortcutName: 'AIMA Quran Player',
   },
 }
 /**
@@ -87,9 +87,9 @@ const linuxOptions = {
       // https://specifications.freedesktop.org/desktop-entry-spec/latest/example.html
       // https://developer.gnome.org/documentation/guidelines/maintainer/integrating.html#desktop-files
       entry: {
-        Name: 'LX Music',
-        'Name[zh_CN]': 'LX Music',
-        'Name[zh_TW]': 'LX Music',
+        Name: 'AIMA Quran Player',
+        'Name[zh_CN]': 'AIMA Quran Player',
+        'Name[zh_TW]': 'AIMA Quran Player',
         Encoding: 'UTF-8',
         MimeType: 'x-scheme-handler/lxmusic',
         StartupNotify: 'false',
@@ -128,7 +128,7 @@ const macOptions = {
         path: '/Applications',
       },
     ],
-    title: 'LX Music v${version}',
+    title: 'AIMA Quran Player v${version}',
   },
 }
 
