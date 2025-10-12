@@ -51,10 +51,16 @@ function startRenderer() {
       port: 9080,
       hot: true,
       historyApiFallback: true,
-      static: {
-        directory: path.join(__dirname, '../src/common/theme/images'),
-        publicPath: '/theme_images',
-      },
+      static: [
+        {
+          directory: path.join(__dirname, '../src/common/theme/images'),
+          publicPath: '/theme_images',
+        },
+        {
+          directory: path.join(__dirname, '../src/static'),
+          publicPath: '/static',
+        },
+      ],
       client: {
         logging: 'warn',
         overlay: true,

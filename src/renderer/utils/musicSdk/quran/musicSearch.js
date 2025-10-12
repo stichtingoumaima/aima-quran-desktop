@@ -1,4 +1,5 @@
 import { httpFetch } from '../../request'
+import { getReciterImage } from './utils'
 
 export default {
   limit: 30,
@@ -77,34 +78,48 @@ export default {
   handleReciterResult(reciters) {
     if (!reciters) return []
 
-    return reciters.map(reciter => ({
-      name: reciter.translatedName?.name || reciter.name || 'Unknown Reciter',
-      singer: reciter.name || 'Unknown Reciter',
-      source: 'quran',
-      songmid: `reciter_${reciter.id || 'unknown'}`,
-      albumId: `reciter_${reciter.id || 'unknown'}`,
-      interval: '0:00', // Reciters don't have duration
-      albumName: `${reciter.style?.name || 'Recitation'} - ${reciter.qirat?.name || 'Hafs'}`,
-      img: reciter.profilePicture || reciter.coverImage || this.getReciterFallbackImage(reciter.name),
-      lrc: null,
-      types: [
-        { type: 'mp3', size: '0MB' }, // All recitations are MP3
-      ],
-      _types: {
-        mp3: { size: '0MB' },
-      },
-      typeUrl: {},
-      // Quran-specific data
-      reciterId: reciter.id || 'unknown',
-      reciterName: reciter.name || 'Unknown Reciter',
-      reciterPic: reciter.profilePicture || '',
-      recitationStyle: reciter.recitationStyle || 'Unknown',
-      qirat: reciter.qirat?.name || 'Unknown',
-      style: reciter.style?.name || 'Unknown',
-      bio: reciter.bio || '',
-      relativePath: reciter.relativePath || '',
-      isReciter: true, // Flag to identify this as a reciter
-    }))
+    return reciters.map(reciter => {
+      const reciterName = reciter.translatedName?.name || reciter.name || 'Unknown Reciter'
+      const styleName = reciter.style?.name || 'Recitation'
+      const qiratName = reciter.qirat?.name || 'Hafs'
+
+      // Create a unique identifier that includes style information
+      const uniqueId = `${reciter.id}_${styleName.toLowerCase().replace(/\s+/g, '_')}`
+
+      // Create a more descriptive name that includes the recitation style
+      const displayName = styleName !== 'Recitation'
+        ? `${reciterName} (${styleName})`
+        : reciterName
+
+      return {
+        name: displayName,
+        singer: reciterName,
+        source: 'quran',
+        songmid: `reciter_${uniqueId}`,
+        albumId: `reciter_${uniqueId}`,
+        interval: '0:00', // Reciters don't have duration
+        albumName: `${styleName} - ${qiratName}`,
+        img: getReciterImage(reciter),
+        lrc: null,
+        types: [
+          { type: 'mp3', size: '0MB' }, // All recitations are MP3
+        ],
+        _types: {
+          mp3: { size: '0MB' },
+        },
+        typeUrl: {},
+        // Quran-specific data
+        reciterId: reciter.id || 'unknown',
+        reciterName,
+        reciterPic: reciter.profilePicture || '',
+        recitationStyle: reciter.recitationStyle || styleName,
+        qirat: qiratName,
+        style: styleName,
+        bio: reciter.bio || '',
+        relativePath: reciter.relativePath || '',
+        isReciter: true, // Flag to identify this as a reciter
+      }
+    })
   },
 
   // Transform search results to music SDK format

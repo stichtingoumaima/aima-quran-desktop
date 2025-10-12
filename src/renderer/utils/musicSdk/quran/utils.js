@@ -318,3 +318,63 @@ export const getRevelationPlace = (chapterId) => {
   ]
   return makkahChapters.includes(chapterId) ? 'Makkah' : 'Madinah'
 }
+
+/**
+ * Get local reciter image path for a given reciter ID
+ * @param {number|string} reciterId - Reciter ID from Quran.com API
+ * @returns {string|null} Local image path or null if not found
+ */
+export const getReciterLocalImage = (reciterId) => {
+  if (!reciterId) {
+    console.log('🔍 No reciter ID provided')
+    return null
+  }
+
+  // Available local reciter images
+  const availableImages = ['1', '2', '3', '4', '5', '6', '7', '9', '10', '12', '97', '161', '168', '173']
+  const reciterIdStr = String(reciterId)
+
+  console.log('🔍 Checking for local image for reciter ID:', reciterIdStr, 'Available:', availableImages)
+
+  if (availableImages.includes(reciterIdStr)) {
+    // Use static asset path that works with webpack dev server
+    const imagePath = reciterIdStr === '2' || reciterIdStr === '3' || reciterIdStr === '97' || reciterIdStr === '168'
+      ? `/static/reciters/${reciterIdStr}.jpeg`
+      : `/static/reciters/${reciterIdStr}.jpg`
+    console.log('✅ Found local image path:', imagePath)
+    return imagePath
+  }
+
+  console.log('❌ No local image available for reciter ID:', reciterIdStr)
+  return null
+}
+
+/**
+ * Get reciter image with fallback to local image
+ * @param {object} reciter - Reciter object from API
+ * @returns {string} Image URL (API image or local fallback)
+ */
+export const getReciterImage = (reciter) => {
+  if (!reciter) return ''
+
+  // First try API provided images
+  if (reciter.profilePicture) {
+    console.log('🎨 Using API profile picture for reciter:', reciter.id, reciter.name)
+    return reciter.profilePicture
+  }
+  if (reciter.coverImage) {
+    console.log('🎨 Using API cover image for reciter:', reciter.id, reciter.name)
+    return reciter.coverImage
+  }
+
+  // Fallback to local image
+  const localImage = getReciterLocalImage(reciter.id)
+  if (localImage) {
+    console.log('🖼️ Using local image for reciter:', reciter.id, reciter.name, '->', localImage)
+    return localImage
+  }
+
+  // Final fallback - empty string
+  console.log('❌ No image found for reciter:', reciter.id, reciter.name)
+  return ''
+}

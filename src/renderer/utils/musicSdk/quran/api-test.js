@@ -28,8 +28,23 @@ const api_test = {
     }
 
     // Extract reciterId and chapterId from various possible locations
-    const reciterId = songInfo.reciterId || songInfo.songmid?.split('_')[2] || songInfo.meta?.reciterId
-    const chapterId = songInfo.chapterId || songInfo.songmid?.split('_')[1] || songInfo.meta?.chapterId
+    let reciterId = songInfo.reciterId || songInfo.meta?.reciterId
+    let chapterId = songInfo.chapterId || songInfo.meta?.chapterId
+
+    // If not found in direct fields, try to extract from songmid
+    if (!reciterId || !chapterId) {
+      const songmidParts = songInfo.songmid?.split('_') || []
+      if (songmidParts.length >= 3) {
+        // Format: chapter_8_default -> chapterId=8, reciterId=default
+        chapterId = chapterId || songmidParts[1]
+        reciterId = reciterId || songmidParts[2]
+      }
+    }
+
+    // If reciterId is still 'default', try to extract from the reciterId field
+    if (reciterId === 'default' && songInfo.reciterId) {
+      reciterId = songInfo.reciterId
+    }
 
     console.log('🌐 Extracted IDs - reciterId:', reciterId, 'chapterId:', chapterId)
     console.log('🌐 Fetching audio URL for reciter:', reciterId, 'chapter:', chapterId)

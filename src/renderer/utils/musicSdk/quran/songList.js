@@ -2,7 +2,7 @@ import { httpFetch } from '../../request'
 import { requestMsg } from '../../message'
 import { headers, timeout } from '../options'
 import { dnsLookup } from '../utils'
-import { formatDuration, formatFileSize } from './utils'
+import { formatDuration, formatFileSize, getReciterImage } from './utils'
 
 export default {
   limit: 30,
@@ -13,7 +13,7 @@ export default {
   // Get all available reciters from Quran.com API
   getReciters(locale = 'en') {
     console.log('🌐 Fetching reciters from API...')
-    const requestObj = httpFetch(`https://api.qurancdn.com/api/qdc/audio/reciters?locale=${locale}&fields=profile_picture,cover_image,bio`)
+    const requestObj = httpFetch(`https://api.qurancdn.com/api/qdc/audio/reciters?locale=${locale}&fields=profile_picture,cover_image,bio,style,qirat,recitation_style,translated_name`)
     return requestObj.promise.then(({ body }) => {
       console.log('📡 API Response received:', body)
       if (!body || !body.reciters || !Array.isArray(body.reciters)) {
@@ -47,35 +47,49 @@ export default {
   handleReciterResult(reciters) {
     if (!reciters) return []
 
-    return reciters.map(reciter => ({
-      name: reciter.translatedName?.name || reciter.name || 'Unknown Reciter',
-      singer: reciter.name || 'Unknown Reciter',
-      source: 'quran',
-      id: `reciter_${reciter.id || 'unknown'}`, // This is used by toDetail() for navigation
-      songmid: `reciter_${reciter.id || 'unknown'}`,
-      albumId: `reciter_${reciter.id || 'unknown'}`,
-      interval: '0:00', // Reciters don't have duration
-      albumName: `${reciter.style?.name || 'Recitation'} - ${reciter.qirat?.name || 'Hafs'}`,
-      img: reciter.profilePicture || reciter.coverImage || '',
-      lrc: null,
-      types: [
-        { type: 'mp3', size: '0MB' }, // All recitations are MP3
-      ],
-      _types: {
-        mp3: { size: '0MB' },
-      },
-      typeUrl: {},
-      // Quran-specific data
-      reciterId: reciter.id || 'unknown',
-      reciterName: reciter.name || 'Unknown Reciter',
-      reciterPic: reciter.profilePicture || '',
-      recitationStyle: reciter.recitationStyle || 'Unknown',
-      qirat: reciter.qirat?.name || 'Unknown',
-      style: reciter.style?.name || 'Unknown',
-      bio: reciter.bio || '',
-      relativePath: reciter.relativePath || '',
-      isReciter: true, // Flag to identify this as a reciter
-    }))
+    return reciters.map(reciter => {
+      const reciterName = reciter.translatedName?.name || reciter.name || 'Unknown Reciter'
+      const styleName = reciter.style?.name || 'Recitation'
+      const qiratName = reciter.qirat?.name || 'Hafs'
+
+      // Create a unique identifier that includes style information
+      const uniqueId = `${reciter.id}_${styleName.toLowerCase().replace(/\s+/g, '_')}`
+
+      // Create a more descriptive name that includes the recitation style
+      const displayName = styleName !== 'Recitation'
+        ? `${reciterName} (${styleName})`
+        : reciterName
+
+      return {
+        name: displayName,
+        singer: reciterName,
+        source: 'quran',
+        id: `reciter_${uniqueId}`, // This is used by toDetail() for navigation
+        songmid: `reciter_${uniqueId}`,
+        albumId: `reciter_${uniqueId}`,
+        interval: '0:00', // Reciters don't have duration
+        albumName: `${styleName} - ${qiratName}`,
+        img: getReciterImage(reciter),
+        lrc: null,
+        types: [
+          { type: 'mp3', size: '0MB' }, // All recitations are MP3
+        ],
+        _types: {
+          mp3: { size: '0MB' },
+        },
+        typeUrl: {},
+        // Quran-specific data
+        reciterId: reciter.id || 'unknown',
+        reciterName,
+        reciterPic: reciter.profilePicture || '',
+        recitationStyle: reciter.recitationStyle || styleName,
+        qirat: qiratName,
+        style: styleName,
+        bio: reciter.bio || '',
+        relativePath: reciter.relativePath || '',
+        isReciter: true, // Flag to identify this as a reciter
+      }
+    })
   },
 
   // Transform chapters to music SDK format (as songs)
@@ -318,16 +332,18 @@ export default {
   getListDetail(reciterId, page = 1, limit = 30) {
     console.log('📖 Quran getListDetail called:', { reciterId, page, limit })
 
-    // Extract reciter ID from the format "reciter_123"
+    // Extract reciter ID from the format "reciter_123_style" or "reciter_123"
     const actualReciterId = reciterId.replace('reciter_', '')
-    console.log('🎯 Extracted reciter ID:', actualReciterId)
+    // Extract just the numeric part (before the first underscore if it exists)
+    const numericReciterId = actualReciterId.split('_')[0]
+    console.log('🎯 Extracted reciter ID:', actualReciterId, '-> numeric:', numericReciterId)
 
     return this.getChapters().then(chapters => {
       console.log('📚 Got chapters:', chapters.length)
 
       // Get reciter info to include in the result
       return this.getReciters().then(reciters => {
-        const reciter = reciters.find(r => r.id.toString() === actualReciterId)
+        const reciter = reciters.find(r => r.id.toString() === numericReciterId)
         console.log('🎤 Found reciter:', reciter?.name || 'Unknown')
 
         // Apply pagination to chapters
@@ -337,7 +353,7 @@ export default {
 
         // Fetch audio data for each chapter to get duration
         const audioPromises = paginatedChapters.map(chapter =>
-          this.getChapterAudio(actualReciterId, chapter.id),
+          this.getChapterAudio(numericReciterId, chapter.id),
         )
 
         return Promise.all(audioPromises).then(audioData => {
