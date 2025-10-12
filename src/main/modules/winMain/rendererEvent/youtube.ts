@@ -1057,7 +1057,7 @@ export const setupYouTubeHandlers = () => {
             }
           }
         } catch (trendingError) {
-          console.log('⚠️ Search-based trending failed, falling back to search:', trendingError.message)
+          console.log('⚠️ Search-based trending failed, falling back to search:', trendingError instanceof Error ? trendingError.message : String(trendingError))
         }
       } else if (category === 'most_viewed') {
         console.log('🎯 Using search for most viewed with manual date sorting')
@@ -1110,7 +1110,7 @@ export const setupYouTubeHandlers = () => {
             }
           }
         } catch (mostViewedError) {
-          console.log('⚠️ Native most viewed search failed, falling back to search:', mostViewedError.message)
+          console.log('⚠️ Native most viewed search failed, falling back to search:', mostViewedError instanceof Error ? mostViewedError.message : String(mostViewedError))
         }
       } else if (category === 'recent_uploads') {
         console.log('🎯 Using native YouTube search with sort_by_upload_date for recent uploads')
@@ -1163,7 +1163,7 @@ export const setupYouTubeHandlers = () => {
             }
           }
         } catch (recentUploadsError) {
-          console.log('⚠️ Native recent uploads search failed, falling back to search:', recentUploadsError.message)
+          console.log('⚠️ Native recent uploads search failed, falling back to search:', recentUploadsError instanceof Error ? recentUploadsError.message : String(recentUploadsError))
         }
       }
       
@@ -1257,7 +1257,7 @@ export const setupYouTubeHandlers = () => {
             }
           }
         } catch (paramsError) {
-          console.log('⚠️ YouTube params search failed, falling back to query-based search:', paramsError.message)
+          console.log('⚠️ YouTube params search failed, falling back to query-based search:', paramsError instanceof Error ? paramsError.message : String(paramsError))
         }
       }
       
@@ -1292,7 +1292,7 @@ export const setupYouTubeHandlers = () => {
         viral: ['quran recitation', 'quran tilawah', 'quran reciter']
       }
 
-      const queries = searchQueries[category] || searchQueries.trending_now
+      const queries = (searchQueries as any)[category] || searchQueries.trending_now
       console.log('🔍 Using search queries:', queries)
 
       // Search for videos using multiple queries
@@ -1308,7 +1308,7 @@ export const setupYouTubeHandlers = () => {
             allVideos.push(...videos)
           }
         } catch (error) {
-          console.log('⚠️ Search query failed:', query, error.message)
+          console.log('⚠️ Search query failed:', query, error instanceof Error ? error.message : String(error))
         }
       }
 
@@ -1400,7 +1400,7 @@ export const setupYouTubeHandlers = () => {
       console.error('❌ YouTube trending error:', error)
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   })
