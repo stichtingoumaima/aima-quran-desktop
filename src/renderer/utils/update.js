@@ -13,7 +13,7 @@ const address = [
   [`https://fastly.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
   [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
   ['https://registry.npmmirror.com/aima-quran-desktop-version-info/latest', 'npm'],
-  ['https://gitee.com/ayma/aima-quran-desktop-versions/raw/master/version.json', 'direct'],
+  [`https://gitee.com/${author}/${name}-versions/raw/master/version.json`, 'direct'],
   ['http://cdn.stsky.cn/aima-quran/desktop/version.json', 'direct'],
 ]
 
