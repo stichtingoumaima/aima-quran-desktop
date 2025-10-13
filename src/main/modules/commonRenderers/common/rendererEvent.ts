@@ -22,5 +22,9 @@ export default () => {
   mainHandle<string[]>(CMMON_EVENT_NAME.get_system_fonts, async() => {
     return getFonts()
   })
+
+  mainHandle<string>(CMMON_EVENT_NAME.get_static_path, async() => {
+    return global.staticPath
+  })
 }
 

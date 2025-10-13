@@ -132,6 +132,26 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     })
   }
 
+  // Special handling for Quran source with search text - redirect to YouTube
+  if (text && sourceId === 'quran') {
+    console.log('🔄 Quran songlist search with text - redirecting to YouTube:', text)
+    // Use YouTube source instead for search results
+    const youtubeListInfo = listInfos['youtube']!
+    const key = `${page}__youtube__${text}`
+    if (youtubeListInfo.key == key && youtubeListInfo.list.length) return youtubeListInfo.list
+    youtubeListInfo.noItemLabel = window.i18n.t('list__loading')
+    youtubeListInfo.key = key
+    return (music['youtube']?.songList.search(text, page, youtubeListInfo.limit).then((data: SearchResult) => {
+      if (key != youtubeListInfo.key) return []
+      return setList(data, page, text)
+    }) ?? Promise.reject(new Error('source not found: youtube'))).catch((error: any) => {
+      resetListInfo('youtube')
+      youtubeListInfo.noItemLabel = window.i18n.t('list__load_failed')
+      console.log(error)
+      throw error
+    })
+  }
+
   if (!text) return resetListInfo(sourceId)
   const key = `${page}__${sourceId}__${text}`
   if (listInfo.key == key && listInfo.list.length) return listInfo.list

@@ -8,10 +8,10 @@ const sources: Array<{
 }> = [
   {
     id: 'test',
-    name: '测试接口',
+    name: 'Test API',
     disabled: false,
     supportQualitys: {
-      kw: ['128k'],
+      // kw: ['128k'],
       kg: ['128k'],
       tx: ['128k'],
       wy: ['128k'],
@@ -23,10 +23,10 @@ const sources: Array<{
   },
   {
     id: 'temp',
-    name: '临时接口',
+    name: 'Temporary API',
     disabled: false,
     supportQualitys: {
-      kw: ['128k'],
+      // kw: ['128k'],
       quran: ['mp3'],
       youtube: ['128k', '192k'] as any,
     },

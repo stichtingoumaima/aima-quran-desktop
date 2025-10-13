@@ -10,11 +10,17 @@ type Messages = Record<(typeof langs)[number]['locale'], Message>
 
 const langs = [
   {
+    name: 'English',
+    locale: 'en-us',
+    country: 'us',
+    fallback: true,
+    message: en_us,
+  },
+  {
     name: '简体中文',
     locale: 'zh-cn',
     // alternate: 'zh-hans',
     country: 'cn',
-    fallback: true,
     message: zh_cn,
   },
   {
@@ -23,12 +29,6 @@ const langs = [
     // alternate: 'zh-hk',
     country: 'cn',
     message: zh_tw,
-  },
-  {
-    name: 'English',
-    locale: 'en-us',
-    country: 'us',
-    message: en_us,
   },
 ] as const
 

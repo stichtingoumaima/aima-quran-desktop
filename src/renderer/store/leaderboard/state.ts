@@ -5,8 +5,7 @@ export type Source = LX.OnlineSource
 
 export const sources: LX.OnlineSource[] = markRaw([])
 
-// Use kw (Kuwo) and youtube for charts functionality
-sources.push('kw' as LX.OnlineSource)
+// Use only youtube for charts functionality
 sources.push('youtube' as LX.OnlineSource)
 
 export interface BoardItem {

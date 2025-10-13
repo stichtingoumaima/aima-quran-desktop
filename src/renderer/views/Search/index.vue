@@ -5,8 +5,8 @@
       <base-tab v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
     </div>
     <div :class="$style.main">
-      <song-list-list v-if="searchType == 'songlist'" v-show="searchText || source === 'quran'" :page="page" :source-id="source" />
-      <music-list v-else v-show="searchText || source === 'quran'" :page="page" :source-id="source" />
+      <song-list-list v-if="searchType == 'songlist'" v-show="searchText || source === 'quran'" :page="page" :source-id="getEffectiveSourceId()" />
+      <music-list v-else v-show="searchText || source === 'quran'" :page="page" :source-id="getEffectiveSourceId()" />
       <blank-view :visible="!searchText && source !== 'quran'" :source="source" />
     </div>
   </div>
@@ -21,7 +21,7 @@ import { sources as _sources } from '@renderer/store/search/music'
 import MusicList from './MusicList/index.vue'
 import SongListList from './SongListList/index.vue'
 import BlankView from './components/BlankView.vue'
-import { computed, ref } from '@common/utils/vueTools'
+import { computed, ref, watch } from '@common/utils/vueTools'
 import { sourceNames } from '@renderer/store'
 
 const source = ref('quran')
@@ -36,7 +36,10 @@ const verifyQueryParams = async(to, from, next) => {
   if (_source == null || _type == null) {
     const setting = await getSearchSetting()
     _source ??= setting.source
-    _type ??= setting.type
+    // For Quran.com source, default to playlist (songlist) instead of song (music)
+    if (_type == null) {
+      _type = _source === 'quran' ? 'songlist' : setting.type
+    }
 
     next({
       path: to.path,
@@ -76,17 +79,27 @@ export default {
       }
     })
     const handleSourceChange = (id) => {
+      // If switching to Quran.com, automatically set type to songlist
+      const newType = id === 'quran' ? 'songlist' : route.query.type
       void router.replace({
         path: route.path,
         query: {
           ...route.query,
           source: id,
+          type: newType,
           page: 1,
         },
       })
     }
 
     const searchTypes = computed(() => {
+      // For Quran.com source, only show playlist tab
+      if (source.value === 'quran') {
+        return [
+          { label: window.i18n.t('search__type_songlist'), id: 'songlist' },
+        ]
+      }
+      // For other sources, show both tabs
       return [
         { label: window.i18n.t('search__type_music'), id: 'music' },
         { label: window.i18n.t('search__type_songlist'), id: 'songlist' },
@@ -103,6 +116,29 @@ export default {
       })
     }
 
+    // Watch for source changes and ensure Quran.com uses playlist type
+    watch(source, (newSource) => {
+      if (newSource === 'quran' && searchType.value !== 'songlist') {
+        void router.replace({
+          path: route.path,
+          query: {
+            ...route.query,
+            type: 'songlist',
+          },
+        })
+      }
+    })
+
+    // Get the effective source ID for search
+    // For Quran.com: show reciters by default, but redirect searches to YouTube
+    const getEffectiveSourceId = () => {
+      if (source.value === 'quran') {
+        // If there's search text, redirect to YouTube
+        // If no search text, use Quran to show reciters by default
+        return searchText.value ? 'youtube' : 'quran'
+      }
+      return source.value
+    }
 
     return {
       sources,
@@ -113,6 +149,7 @@ export default {
       handleTypeChange,
       page,
       searchText,
+      getEffectiveSourceId,
     }
   },
 }

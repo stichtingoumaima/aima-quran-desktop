@@ -337,10 +337,17 @@ export const getReciterLocalImage = (reciterId) => {
   console.log('🔍 Checking for local image for reciter ID:', reciterIdStr, 'Available:', availableImages)
 
   if (availableImages.includes(reciterIdStr)) {
-    // Use static asset path that works with webpack dev server
-    const imagePath = reciterIdStr === '2' || reciterIdStr === '3' || reciterIdStr === '97' || reciterIdStr === '168'
-      ? `/static/reciters/${reciterIdStr}.jpeg`
-      : `/static/reciters/${reciterIdStr}.jpg`
+    // Use static asset path that works in both dev and production
+    const fileName = reciterIdStr === '2' || reciterIdStr === '3' || reciterIdStr === '97' || reciterIdStr === '168'
+      ? `${reciterIdStr}.jpeg`
+      : `${reciterIdStr}.jpg`
+
+    // In development, use webpack dev server path
+    // In production, use the static path from main process
+    const imagePath = process.env.NODE_ENV === 'development'
+      ? `/static/reciters/${fileName}`
+      : `file://${window.lx?.staticPath || './static'}/reciters/${fileName}`.replace(/\\/g, '/')
+
     console.log('✅ Found local image path:', imagePath)
     return imagePath
   }

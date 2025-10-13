@@ -1,6 +1,7 @@
 const modules = {
   common: {
     get_env_params: 'get_env_params',
+    get_static_path: 'get_static_path',
     deeplink: 'deeplink',
     clear_env_params_deeplink: 'clear_env_params_deeplink',
     system_theme_change: 'system_theme_change',

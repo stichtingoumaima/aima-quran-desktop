@@ -9,14 +9,14 @@ const afterPack = require('./build-after-pack')
 * @see https://www.electron.build/configuration/configuration
 */
 const options = {
-  appId: 'cn.toside.music.desktop',
+  appId: 'com.aima.quran.desktop',
   productName: 'aima-quran-desktop',
   beforePack,
   afterPack,
   protocols: {
     name: 'aima-quran-protocol',
     schemes: [
-      'lxmusic',
+      'aima-quran',
     ],
   },
   directories: {
@@ -47,7 +47,7 @@ const options = {
   publish: [
     {
       provider: 'github',
-      owner: 'lyswhut',
+      owner: 'ayma',
       repo: 'aima-quran-desktop',
     },
   ],
@@ -59,12 +59,12 @@ const options = {
 const winOptions = {
   win: {
     icon: './resources/icons/icon.ico',
-    legalTrademarks: 'lyswhut',
+    legalTrademarks: 'AIMA Team',
     // artifactName: '${productName}-v${version}-${env.ARCH}-${env.TARGET}.${ext}',
   },
   nsis: {
     oneClick: false,
-    language: '2052',
+    language: '1033',
     allowToChangeInstallationDirectory: true,
     // differentialPackage: true,
     license: './licenses/license.rtf',
@@ -77,7 +77,7 @@ const winOptions = {
  */
 const linuxOptions = {
   linux: {
-    maintainer: 'lyswhut <lyswhut@qq.com>',
+    maintainer: 'AIMA Team <aima@example.com>',
     // artifactName: '${productName}-${version}.${env.ARCH}.${ext}',
     icon: './resources/icons',
     category: 'Utility;AudioVideo;Audio;Player;Music;',
@@ -91,7 +91,7 @@ const linuxOptions = {
         'Name[zh_CN]': 'AIMA Quran Player',
         'Name[zh_TW]': 'AIMA Quran Player',
         Encoding: 'UTF-8',
-        MimeType: 'x-scheme-handler/lxmusic',
+        MimeType: 'x-scheme-handler/aima-quran',
         StartupNotify: 'false',
       },
     },

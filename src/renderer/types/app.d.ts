@@ -29,6 +29,7 @@ interface Lx {
   }
   rootOffset: number
   apiInitPromise: [Promise<boolean>, boolean, (success: boolean) => void]
+  staticPath: string
 }
 
 declare global {

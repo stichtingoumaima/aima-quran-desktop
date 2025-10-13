@@ -49,20 +49,20 @@ export const DATA_KEYS = {
 
 export const DEFAULT_SETTING = {
   leaderboard: {
-    source: 'quran',
-    boardId: 'kw__16',
+    source: 'youtube',
+    boardId: 'youtube__trending_now',
   },
 
   songList: {
-    source: 'quran',
+    source: 'youtube',
     sortId: 'new',
     tagId: '',
   },
 
   search: {
-    temp_source: 'kw',
-    source: 'all',
-    type: 'music',
+    temp_source: 'youtube',
+    source: 'quran',
+    type: 'songlist',
   },
 
   viewPrevState: {

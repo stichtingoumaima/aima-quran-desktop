@@ -150,7 +150,7 @@ const defaultSetting: LX.AppSetting = {
   'openAPI.bindLan': false,
 
   // 'theme.id': 'blue_plus',
-  'theme.id': 'green',
+  'theme.id': 'black',
   'theme.lightId': 'green',
   'theme.darkId': 'black',
 

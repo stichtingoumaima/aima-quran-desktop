@@ -18,6 +18,8 @@ import router from './router'
 
 
 import { getSetting, updateSetting } from './utils/ipc'
+import { rendererInvoke } from '@common/rendererIpc'
+import { CMMON_EVENT_NAME } from '@common/ipcNames'
 import { langList } from '@root/lang'
 import type { I18n } from '@root/lang/i18n'
 
@@ -36,6 +38,14 @@ router.afterEach((to) => {
       query: { ...to.query },
     })
   }
+})
+
+// Initialize static path
+void rendererInvoke<string>(CMMON_EVENT_NAME.get_static_path).then(staticPath => {
+  window.lx.staticPath = staticPath
+}).catch(() => {
+  // Fallback if IPC fails
+  window.lx.staticPath = process.env.NODE_ENV === 'development' ? '/static' : './static'
 })
 
 void getSetting().then(setting => {
