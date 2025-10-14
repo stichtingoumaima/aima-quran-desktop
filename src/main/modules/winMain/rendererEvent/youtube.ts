@@ -13,35 +13,6 @@ let youtubeClient: any = null
 let audioProxyServer: any = null
 let audioProxyPort: number = 0
 
-// Rate limiting protection
-let lastRequestTime = 0
-const MIN_REQUEST_INTERVAL = 2000 // 2 seconds between requests
-let consecutiveFailures = 0
-const MAX_CONSECUTIVE_FAILURES = 3
-
-// Rate limiting function
-const enforceRateLimit = async (): Promise<void> => {
-  const now = Date.now()
-  const timeSinceLastRequest = now - lastRequestTime
-  
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest
-    console.log(`⏳ Rate limiting: waiting ${waitTime}ms before next request`)
-    await new Promise(resolve => setTimeout(resolve, waitTime))
-  }
-  
-  lastRequestTime = Date.now()
-}
-
-// Check if we should skip requests due to too many failures
-const shouldSkipRequest = (): boolean => {
-  if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-    console.log(`🚫 Skipping request due to ${consecutiveFailures} consecutive failures`)
-    return true
-  }
-  return false
-}
-
 // yt-dlp function to get audio stream URL
 const getAudioStreamWithYtDlp = (videoId: string): Promise<{ url: string, mimeType: string, bitrate: number, quality: string, codec: string }> => {
   return new Promise((resolve, reject) => {
@@ -311,40 +282,37 @@ export const setupYouTubeHandlers = () => {
   mainHandle<{ query: string, page?: number, limit?: number, searchType?: string }, any>(WIN_MAIN_RENDERER_EVENT_NAME.youtube_search, async({ params: { query, page = 1, limit = 30, searchType = 'video' } }) => {
     try {
       console.log('🔍 YouTube search request in main process:', { query, page, limit, searchType })
-      
-      // Check if we should skip due to too many failures
-      if (shouldSkipRequest()) {
-        return {
-          success: false,
-          error: 'Too many consecutive failures, please wait before trying again',
-        }
-      }
-      
-      // Enforce rate limiting
-      await enforceRateLimit()
-      
       const yt = await getYouTubeClient()
       
-      // Try search with minimal fallback attempts to avoid rate limiting
+      // Try multiple search approaches based on search type
       let searchResponse
       try {
         if (searchType === 'playlist') {
+          // Method 1: Search for playlists specifically
           searchResponse = await yt.search(query, { type: 'playlist' })
           console.log('✅ Playlist search succeeded')
         } else {
+          // Method 1: Direct search for videos
           searchResponse = await yt.search(query)
-          console.log('✅ Video search succeeded')
+          console.log('✅ Direct video search succeeded')
         }
       } catch (error1) {
-        console.log('⚠️ Primary search failed, trying one fallback:', (error1 as Error).message)
+        console.log('⚠️ Primary search failed, trying fallback:', (error1 as Error).message)
         try {
-          // Only one fallback attempt to avoid rate limiting
-          searchResponse = await yt.search(query, { type: 'video' })
-          console.log('✅ Fallback search succeeded')
+          if (searchType === 'playlist') {
+            // Method 2: Mixed search (videos and playlists) for playlists
+            searchResponse = await yt.search(query)
+            console.log('✅ Mixed search succeeded for playlists')
+          } else {
+            // Method 2: Filtered search by video type
+            searchResponse = await yt.search(query, { type: 'video' })
+            console.log('✅ Filtered video search succeeded')
+          }
         } catch (error2) {
-          console.log('❌ All search attempts failed:', (error2 as Error).message)
-          consecutiveFailures++
-          throw error2
+          console.log('⚠️ Fallback search failed, trying basic search:', (error2 as Error).message)
+          // Method 3: Basic search with sort
+          searchResponse = await yt.search(query, { sort_by: 'relevance' })
+          console.log('✅ Basic search succeeded')
         }
       }
 
@@ -486,9 +454,6 @@ export const setupYouTubeHandlers = () => {
         total: videos.length + playlists.length
       })
 
-      // Reset consecutive failures on success
-      consecutiveFailures = 0
-
       return {
         success: true,
         data: {
@@ -501,9 +466,6 @@ export const setupYouTubeHandlers = () => {
       }
     } catch (error) {
       console.error('❌ YouTube search error:', error)
-      
-      // Increment consecutive failures
-      consecutiveFailures++
       
       // Provide fallback mock data
       console.log('🔄 Providing fallback mock search data')
@@ -548,22 +510,10 @@ export const setupYouTubeHandlers = () => {
   mainHandle<{ videoId: string }, any>(WIN_MAIN_RENDERER_EVENT_NAME.youtube_get_stream, async({ params: { videoId } }) => {
     try {
       console.log('🔍 YouTube get stream request in main process:', { videoId })
-      
-      // Check if we should skip due to too many failures
-      if (shouldSkipRequest()) {
-        return {
-          success: false,
-          error: 'Too many consecutive failures, please wait before trying again',
-        }
-      }
-      
-      // Enforce rate limiting
-      await enforceRateLimit()
-      
       const yt = await getYouTubeClient()
       console.log('✅ YouTube client obtained:', !!yt)
       
-      // Try getStreamingData with minimal fallback attempts
+      // Try different approaches for getStreamingData
       let format
       try {
         // Method 1: Try audio-only format first (most compatible)
@@ -573,17 +523,30 @@ export const setupYouTubeHandlers = () => {
           format: 'mp4',
           codec: 'mp4a'
         })
-        console.log('✅ Audio stream extraction succeeded')
+        console.log('✅ Method 1 (audio-only) succeeded')
       } catch (error1) {
-        console.log('⚠️ Primary method failed, trying one fallback:', (error1 as Error).message)
+        console.log('⚠️ Method 1 failed, trying method 2:', (error1 as Error).message)
         try {
-          // Only one fallback attempt to avoid rate limiting
-          format = await yt.getStreamingData(videoId, { type: 'audio' })
-          console.log('✅ Fallback stream extraction succeeded')
+          // Method 2: Try webm audio format
+          format = await yt.getStreamingData(videoId, {
+            type: 'audio',
+            quality: 'best',
+            format: 'webm',
+            codec: 'opus'
+          })
+          console.log('✅ Method 2 (webm audio) succeeded')
         } catch (error2) {
-          console.log('❌ All stream extraction attempts failed:', (error2 as Error).message)
-          consecutiveFailures++
-          throw error2
+          console.log('⚠️ Method 2 failed, trying method 3:', (error2 as Error).message)
+          try {
+            // Method 3: Try without options (fallback)
+            format = await yt.getStreamingData(videoId)
+            console.log('✅ Method 3 (no options) succeeded')
+          } catch (error3) {
+            console.log('⚠️ Method 3 failed, trying method 4:', (error3 as Error).message)
+            // Method 4: Try with minimal options
+            format = await yt.getStreamingData(videoId, { type: 'audio' })
+            console.log('✅ Method 4 (minimal options) succeeded')
+          }
         }
       }
       
@@ -616,9 +579,6 @@ export const setupYouTubeHandlers = () => {
         const streamData = await getAudioStreamWithYtDlp(videoId)
         console.log('✅ yt-dlp stream extraction successful')
         
-        // Reset consecutive failures on success
-        consecutiveFailures = 0
-        
         return {
           success: true,
           data: {
@@ -637,9 +597,6 @@ export const setupYouTubeHandlers = () => {
         const proxiedUrl = getAudioProxyUrl(urlWithHeaders.toString())
         console.log('🌐 Using built-in audio proxy as fallback:', proxiedUrl.substring(0, 100) + '...')
         console.log('🔧 Proxy server should be running on port:', audioProxyPort)
-
-        // Reset consecutive failures on success
-        consecutiveFailures = 0
 
         return {
           success: true,
@@ -661,9 +618,6 @@ export const setupYouTubeHandlers = () => {
         name: (error as Error).name,
         videoId
       })
-      
-      // Increment consecutive failures
-      consecutiveFailures++
       
       // Provide fallback mock stream data
       console.log('🔄 Providing fallback mock stream data')

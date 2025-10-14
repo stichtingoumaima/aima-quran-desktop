@@ -74,15 +74,6 @@ export default {
           name: 'Download',
         },
         {
-          to: '/quran-reader',
-          tips: t('quran_reader'),
-          icon: '#icon-book',
-          iconSize: '0 0 24 24',
-          size,
-          enable: true,
-          name: 'QuranReader',
-        },
-        {
           to: '/setting',
           tips: t('setting'),
           icon: '#icon-setting',

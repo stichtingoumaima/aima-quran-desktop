@@ -4,7 +4,6 @@ import musicSearch from './musicSearch'
 import leaderboard from './leaderboard'
 import hotSearch from './hotSearch'
 import comment from './comment'
-import pageReader from './pageReader'
 import { apis } from '../api-source'
 
 const quran = {
@@ -14,7 +13,6 @@ const quran = {
   leaderboard,
   hotSearch,
   comment,
-  pageReader,
 
   getMusicUrl(songInfo, type) {
     return apis('quran').getMusicUrl(songInfo, type)
