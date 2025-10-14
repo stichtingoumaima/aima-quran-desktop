@@ -39,17 +39,12 @@ const isVerseNumber = computed(() => {
 }
 
 .verseNumber {
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: var(--color-primary-background);
-  color: var(--color-primary-font);
-  font-size: 1rem;
-  line-height: 30px;
-  text-align: center;
-  margin-left: 8px;
-  margin-right: 8px;
-  font-weight: bold;
+  display: inline;
+  line-height: inherit;
+  font-size: inherit;
+  color: inherit;
+  margin-left: 4px;
+  margin-right: 4px;
+  font-weight: normal;
 }
 </style>
