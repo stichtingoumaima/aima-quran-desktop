@@ -2,7 +2,7 @@
   <div :class="$style.pageContainer">
     <div :class="$style.page">
       <Line
-        v-for="lineNumber in 15"
+        v-for="lineNumber in linesWithContent"
         :key="`line-${lineNumber}`"
         :words="getWordsForLine(lineNumber)"
         :line-number="lineNumber"
@@ -64,6 +64,18 @@ const getWordsForLine = (lineNumber: number): QuranWord[] => {
   const words = lineGroups.value[lineKey] || []
   return words
 }
+
+// Get only lines that have content to avoid empty lines
+const linesWithContent = computed(() => {
+  const lines: number[] = []
+  for (let i = 1; i <= 15; i++) {
+    const words = getWordsForLine(i)
+    if (words.length > 0) {
+      lines.push(i)
+    }
+  }
+  return lines
+})
 </script>
 
 <style lang="less" module>
@@ -71,20 +83,17 @@ const getWordsForLine = (lineNumber: number): QuranWord[] => {
 
 .pageContainer {
   direction: rtl;
-  border-bottom: 1px solid #e0e0e0;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
   max-width: 100%;
-  background-color: var(--color-content-background);
+  background-color: var(--color-main-background);
+  padding: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .page {
   width: 100%;
   max-width: 800px;
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-main-background);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -95,6 +104,6 @@ const getWordsForLine = (lineNumber: number): QuranWord[] => {
   font-size: 14px;
   color: var(--color-font-label);
   padding-top: 20px;
-  border-top: 1px solid var(--color-primary-alpha-900);
+  margin-top: 20px;
 }
 </style>

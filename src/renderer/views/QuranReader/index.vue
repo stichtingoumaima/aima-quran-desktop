@@ -68,7 +68,7 @@ const goToPage = (page: number) => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-content-background);
+  background-color: var(--color-main-background);
 }
 
 .header {

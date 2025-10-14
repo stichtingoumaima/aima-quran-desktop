@@ -33,9 +33,10 @@ const lineId = computed(() => `Page${props.pageNumber}-Line${props.lineNumber}`)
   text-align: center;
   margin-inline: auto;
   direction: rtl;
-  min-height: 60px;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 8px;
 }
 </style>
