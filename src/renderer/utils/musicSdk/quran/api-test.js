@@ -2,6 +2,7 @@ import { httpFetch } from '../../request'
 import { requestMsg } from '../../message'
 import { headers, timeout } from '../options'
 import { dnsLookup } from '../utils'
+import pageReader from './pageReader'
 
 const api_test = {
   // Get audio URL for a specific reciter and chapter
@@ -137,6 +138,9 @@ const api_test = {
 
     return requestObj
   },
+
+  // Include pageReader methods
+  ...pageReader,
 }
 
 export default api_test

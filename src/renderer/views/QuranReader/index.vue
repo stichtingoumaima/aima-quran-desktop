@@ -1,31 +1,35 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.header">
-      <h1 :class="$style.title">Quran Reader</h1>
-      <div :class="$style.controls">
-        <button
-          :class="$style.navButton"
-          :disabled="currentPage <= 1"
-          @click="goToPreviousPage"
-        >
-          Previous
-        </button>
-        <select
-          :class="$style.pageSelect"
-          :value="currentPage"
-          @change="goToPage(Number($event.target.value))"
-        >
-          <option v-for="page in availablePages" :key="page" :value="page">
-            Page {{ page }}
-          </option>
-        </select>
-        <button
-          :class="$style.navButton"
-          :disabled="currentPage >= 5"
-          @click="goToNextPage"
-        >
-          Next
-        </button>
+      <div :class="$style.left">
+        <div :class="$style.navigation">
+          <base-btn
+            :class="$style.navButton"
+            :disabled="currentPage <= 1"
+            outline
+            min
+            @click="goToPreviousPage"
+          >
+            Previous
+          </base-btn>
+          <base-selection
+            :model-value="currentPage"
+            :class="$style.pageSelect"
+            :list="pageList"
+            item-key="value"
+            item-name="name"
+            @update:model-value="goToPage"
+          />
+          <base-btn
+            :class="$style.navButton"
+            :disabled="currentPage >= 5"
+            outline
+            min
+            @click="goToNextPage"
+          >
+            Next
+          </base-btn>
+        </div>
       </div>
     </div>
     <ReadingView :page-number="currentPage" />
@@ -40,6 +44,13 @@ const currentPage = ref(1)
 
 const availablePages = computed(() => {
   return Array.from({ length: 5 }, (_, i) => i + 1)
+})
+
+const pageList = computed(() => {
+  return availablePages.value.map(page => ({
+    value: page,
+    name: `Page ${page}`,
+  }))
 })
 
 const goToPreviousPage = () => {
@@ -72,52 +83,34 @@ const goToPage = (page: number) => {
 }
 
 .header {
+  flex: none;
+  width: 100%;
   display: flex;
-  justify-content: space-between;
+  flex-flow: row nowrap;
+  padding-bottom: 5px;
+}
+
+.left {
+  flex: auto;
+  display: flex;
+  flex-flow: row nowrap;
   align-items: center;
-  padding: 20px;
-  background-color: var(--color-main-background);
-  border-bottom: 1px solid var(--color-primary-alpha-900);
+  gap: 20px;
 }
 
-.title {
-  margin: 0;
-  color: var(--color-font);
-  font-size: 24px;
-  font-weight: bold;
-}
 
-.controls {
+.navigation {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: none;
 }
 
 .navButton {
-  padding: 8px 16px;
-  background-color: var(--color-primary-background);
-  color: var(--color-primary-font);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-primary-background-hover);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  // base-btn styling is handled by the component
 }
 
 .pageSelect {
-  padding: 8px 12px;
-  background-color: var(--color-content-background);
-  color: var(--color-font);
-  border: 1px solid var(--color-primary-alpha-600);
-  border-radius: 4px;
-  cursor: pointer;
+  // base-selection styling is handled by the component
 }
 </style>
