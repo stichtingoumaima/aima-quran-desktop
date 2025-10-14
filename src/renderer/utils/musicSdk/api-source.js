@@ -27,6 +27,8 @@ const allApi = {
   test_api_youtube: api_test_youtube, // Add alias for the mapping logic
   temp_youtube: api_test_youtube, // Use the same API for temp source
   temp_api_youtube: api_test_youtube, // Add alias for the mapping logic
+  // Direct mapping for quran source
+  quran: api_test_quran,
 }
 
 const apiList = {}
@@ -44,6 +46,12 @@ for (const api of apiSourceInfo) {
 }
 
 const getAPI = source => {
+  // Check for direct mapping first (for quran source)
+  if (allApi[source]) {
+    console.log('🔑 getAPI found direct mapping for:', source)
+    return allApi[source]
+  }
+
   const key = `${apiSource.value}_api_${source}`
   console.log('🔑 getAPI looking for key:', key)
   console.log('📋 Available API keys:', Object.keys(apiList))
