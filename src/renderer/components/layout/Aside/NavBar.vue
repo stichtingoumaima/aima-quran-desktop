@@ -65,6 +65,15 @@ export default {
           enable: true,
         },
         {
+          to: '/quran-reader',
+          tips: t('quran_reader'),
+          icon: '#icon-text',
+          iconSize: '0 0 425.2 425.2',
+          size,
+          name: 'QuranReader',
+          enable: true,
+        },
+        {
           to: '/download',
           tips: t('download'),
           icon: '#icon-download-2',

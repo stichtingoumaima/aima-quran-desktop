@@ -9,8 +9,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from '@common/utils/vueTools'
+import { computed, onMounted } from '@common/utils/vueTools'
 import type { QuranWord as QuranWordType } from '@renderer/types/quran'
+import { FontLoader } from '@renderer/utils/fontLoader'
 import QuranWord from './QuranWord.vue'
 
 interface Props {
@@ -26,6 +27,14 @@ const alignmentClass = computed(() => {
   return props.isCenterAligned ? 'center' : 'space-between'
 })
 
+onMounted(async () => {
+  try {
+    await FontLoader.loadQuranFonts()
+  } catch (error) {
+    console.warn('Failed to load Quran fonts:', error)
+  }
+})
+
 </script>
 
 <style lang="less" module>
@@ -37,7 +46,7 @@ const alignmentClass = computed(() => {
   line-height: 5.8vh; /* Default scale 3 for Madani V1 */
   direction: rtl;
   width: 100%;
-  font-family: 'QPC-Uthmanic-Hafs', 'Amiri', 'Scheherazade', 'Arial Unicode MS', sans-serif;
+  font-family: 'QPC-Uthmanic-Hafs', 'NotoNaskhArabic', 'Amiri', 'Scheherazade', 'Arial Unicode MS', sans-serif;
   font-size: 5.8vh; /* Default scale 3 for Madani V1 */
   color: var(--color-font);
 }

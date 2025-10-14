@@ -1,7 +1,16 @@
 @font-face {
   font-family: 'QPC-Uthmanic-Hafs';
-  src: url('../../../../resources/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2') format('woff2'),
-       url('../../../../resources/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf') format('truetype');
+  src: url('../../../static/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2') format('woff2'),
+       url('../../../static/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NotoNaskhArabic';
+  src: url('../../../static/fonts/lang/arabic/NotoNaskhArabic-Regular.woff2') format('woff2'),
+       url('../../../static/fonts/lang/arabic/NotoNaskhArabic-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -35,7 +44,7 @@
 
 // Base Quran text styling
 .quran-text {
-  font-family: 'QPC-Uthmanic-Hafs', 'Amiri', 'Scheherazade', 'Arial Unicode MS', sans-serif;
+  font-family: 'QPC-Uthmanic-Hafs', 'NotoNaskhArabic', 'Amiri', 'Scheherazade', 'Arial Unicode MS', sans-serif;
   direction: rtl;
   text-align: right;
   unicode-bidi: bidi-override;
