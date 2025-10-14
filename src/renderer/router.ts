@@ -62,6 +62,14 @@ const router = createRouter({
         name: 'Setting',
       },
     },
+    {
+      path: '/quran-reader',
+      name: 'QuranReader',
+      component: require('./views/QuranReader/index.vue').default,
+      meta: {
+        name: 'QuranReader',
+      },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/search' },
   ],
   linkActiveClass: 'active-link',
